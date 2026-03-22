@@ -42,15 +42,19 @@ def static_files(filename):
 
 
 # ========================================================
-# KHỞI CHẠY SERVER
+# KHỞI TẠO HỆ THỐNG TRÊN MÁY CHỦ
+# ========================================================
+with app.app_context():
+    init_db(app)
+    load_model()
+
+# ========================================================
+# CHỈ KHỞI CHẠY THỦ CÔNG (Dành cho máy tính cá nhân)
 # ========================================================
 if __name__ == '__main__':
     print("=" * 50)
     print("  AI Nông Nghiệp — Server + Database (Modular)")
     print("=" * 50)
-    
-    init_db(app)
-    load_model()
     
     print(f"\n🌐 Truy cập: http://localhost:5000\n")
     app.run(debug=True, host='0.0.0.0', port=5000)
