@@ -3,7 +3,7 @@ Flask-Cors
 Flask-SQLAlchemy
 gunicorn
 pandas
-numpy
+numpy<2.0
 Pillow
 scikit-learn
 tqdm
