@@ -1,0 +1,56 @@
+<!-- ========== AUTH SCREEN ========== -->
+<div id="auth-screen" class="hidden min-h-screen flex items-center justify-center p-4 sm:p-6">
+  <div class="w-full max-w-sm">
+    <div class="text-center mb-8">
+      <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center shadow-lg">
+        <i data-lucide="leaf" class="w-8 h-8 text-white"></i>
+      </div>
+      <h1 class="text-3xl font-bold gradient-text mb-2">AI trong Nông Nghiệp</h1>
+      <p class="text-slate-500">Phát hiện thiếu chất dinh dưỡng cây trồng</p>
+    </div>
+    <div class="flex gap-4 mb-6 bg-white rounded-xl p-1 shadow-sm">
+      <button id="login-tab" class="flex-1 py-2 rounded-lg font-medium text-red-600 bg-red-50 transition-all" onclick="switchAuthTab('login')">Đăng nhập</button>
+      <button id="signup-tab" class="flex-1 py-2 rounded-lg font-medium text-slate-600 transition-all" onclick="switchAuthTab('signup')">Đăng ký</button>
+    </div>
+    <div id="login-form" class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+      <form onsubmit="handleLogin(event)">
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-slate-700 mb-2">Email hoặc tên đăng nhập</label>
+          <input type="text" required class="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" placeholder="Nhập email hoặc tên đăng nhập">
+        </div>
+        <div class="mb-6">
+          <label class="block text-sm font-medium text-slate-700 mb-2">Mật khẩu</label>
+          <input type="password" required class="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" placeholder="Nhập mật khẩu">
+        </div>
+        <button type="submit" class="w-full py-3 bg-gradient-to-r from-red-500 to-orange-600 hover:from-red-600 hover:to-orange-700 text-white rounded-xl font-medium transition-all flex items-center justify-center gap-2">
+          <i data-lucide="log-in" class="w-5 h-5"></i> Đăng nhập
+        </button>
+      </form>
+      <p class="text-center text-sm text-slate-500 mt-4">Quên mật khẩu? <a href="#" class="text-red-600 hover:text-red-700 font-medium">Nhấn vào đây</a></p>
+    </div>
+    <div id="signup-form" class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 hidden">
+      <form onsubmit="handleSignup(event)">
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-slate-700 mb-2">Họ và tên</label>
+          <input type="text" required class="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" placeholder="Nhập họ và tên">
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-slate-700 mb-2">Email</label>
+          <input type="email" required class="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" placeholder="Nhập email">
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-slate-700 mb-2">Tên đăng nhập</label>
+          <input type="text" required class="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" placeholder="Nhập tên đăng nhập">
+        </div>
+        <div class="mb-6">
+          <label class="block text-sm font-medium text-slate-700 mb-2">Mật khẩu</label>
+          <input type="password" required class="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent" placeholder="Nhập mật khẩu (ít nhất 6 ký tự)">
+        </div>
+        <button type="submit" class="w-full py-3 bg-gradient-to-r from-red-500 to-orange-600 hover:from-red-600 hover:to-orange-700 text-white rounded-xl font-medium transition-all flex items-center justify-center gap-2">
+          <i data-lucide="user-plus" class="w-5 h-5"></i> Đăng ký
+        </button>
+      </form>
+      <p class="text-center text-xs text-slate-500 mt-4">Bằng cách đăng ký, bạn đồng ý với <a href="#" class="text-red-600 hover:text-red-700">điều khoản dịch vụ</a></p>
+    </div>
+  </div>
+</div>

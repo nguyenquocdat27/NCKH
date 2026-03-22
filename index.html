@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="vi" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI trong Nông Nghiệp</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-200">
+<div id="app">
+
+{% include 'pages/user-type.html' %}
+{% include 'pages/personal.html' %}
+{% include 'pages/device.html' %}
+{% include 'pages/auth.html' %}
+
+<!-- ========== MAIN APP ========== -->
+<div id="main-app" class="hidden flex flex-col min-h-screen">
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16 lg:h-20">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center shadow-lg">
+            <i data-lucide="leaf" class="w-6 h-6 lg:w-7 lg:h-7 text-white"></i>
+          </div>
+          <div>
+            <h1 id="system-title" class="text-lg lg:text-xl font-bold gradient-text">AI trong Nông Nghiệp</h1>
+            <p class="text-xs text-slate-500 hidden sm:block">Phát hiện thiếu chất dinh dưỡng cây trồng</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <button id="mobile-menu-btn" class="lg:hidden p-2 rounded-lg hover:bg-slate-100 transition-colors" onclick="toggleMobileMenu()">
+            <i data-lucide="menu" class="w-6 h-6 text-slate-600"></i>
+          </button>
+          <button id="logout-btn" class="px-3 sm:px-4 py-2 rounded-lg text-sm font-medium text-white bg-red-500 hover:bg-red-600 transition-colors flex items-center gap-2">
+            <i data-lucide="log-out" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">Đăng xuất</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div id="nav-desktop" class="bg-white border-b border-slate-200 sticky top-16 z-30 hidden lg:block">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex overflow-x-auto gap-1 -mb-px">
+        <button class="nav-tab tab-active px-4 py-3 text-sm font-medium border-b-2 border-red-500 text-red-600 whitespace-nowrap transition-all" onclick="switchPage('dashboard')"><i data-lucide="layout-dashboard" class="w-4 h-4 inline mr-1"></i> Dashboard</button>
+        <button class="nav-tab tab-inactive px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-600 hover:text-red-600 whitespace-nowrap transition-all" onclick="switchPage('my-farms')"><i data-lucide="trees" class="w-4 h-4 inline mr-1"></i> Vườn của tôi</button>
+        <button class="nav-tab tab-inactive px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-600 hover:text-red-600 whitespace-nowrap transition-all" onclick="switchPage('esp32')"><i data-lucide="wifi" class="w-4 h-4 inline mr-1"></i> ESP32 &amp; Cảm biến</button>
+        <button class="nav-tab tab-inactive px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-600 hover:text-red-600 whitespace-nowrap transition-all" onclick="switchPage('camera')"><i data-lucide="video" class="w-4 h-4 inline mr-1"></i> Camera</button>
+        <button class="nav-tab tab-inactive px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-600 hover:text-red-600 whitespace-nowrap transition-all" onclick="switchPage('upload')"><i data-lucide="sparkles" class="w-4 h-4 inline mr-1"></i> Tải ảnh &amp; Quét AI</button>
+        <button class="nav-tab tab-inactive px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-600 hover:text-red-600 whitespace-nowrap transition-all" onclick="switchPage('guide')"><i data-lucide="book-open" class="w-4 h-4 inline mr-1"></i> Hướng dẫn</button>
+        <button class="nav-tab tab-inactive px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-600 hover:text-red-600 whitespace-nowrap transition-all" onclick="switchPage('research')"><i data-lucide="file-text" class="w-4 h-4 inline mr-1"></i> Nghiên cứu</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="mobile-menu-overlay" class="fixed inset-0 z-40 hidden bg-black/50 backdrop-blur-sm" onclick="toggleMobileMenu()"></div>
+  <div id="mobile-menu-panel" class="fixed left-0 top-0 bottom-0 z-50 w-4/5 sm:w-72 bg-white shadow-2xl flex flex-col overflow-hidden lg:hidden">
+    <div class="flex items-center justify-between p-4 sm:p-6 border-b border-slate-200 bg-gradient-to-r from-red-50 to-orange-50">
+      <h2 class="font-bold text-lg text-slate-800 flex items-center gap-2"><i data-lucide="menu" class="w-6 h-6 text-red-600"></i>Menu</h2>
+      <button onclick="toggleMobileMenu()" class="p-2 hover:bg-white rounded-lg transition-colors"><i data-lucide="x" class="w-6 h-6 text-slate-600"></i></button>
+    </div>
+    <nav class="flex-1 overflow-y-auto p-2 sm:p-4 space-y-1">
+      <button class="mobile-nav-item w-full text-left px-5 py-4 rounded-xl font-semibold bg-red-50 border-l-4 border-red-500 text-slate-800 transition-all flex items-center gap-3" onclick="switchPageMobile('dashboard')"><i data-lucide="layout-dashboard" class="w-5 h-5 text-red-600"></i><span>Dashboard</span></button>
+      <button class="mobile-nav-item w-full text-left px-5 py-4 rounded-xl font-medium text-slate-600 hover:bg-slate-50 transition-all flex items-center gap-3" onclick="switchPageMobile('my-farms')"><i data-lucide="trees" class="w-5 h-5 text-emerald-500"></i><span>Vườn của tôi</span></button>
+      <div class="px-3 py-4 text-xs font-semibold text-slate-500 uppercase">📊 Cảm biến hiện tại</div>
+      <div class="px-5 py-3 bg-slate-50 rounded-lg space-y-2 text-sm">
+        <div class="flex items-center justify-between"><span class="text-slate-600">🌡️ Nhiệt độ</span><span class="font-bold text-red-600" id="menu-temp">28.5°C</span></div>
+        <div class="flex items-center justify-between"><span class="text-slate-600">💧 Độ ẩm đất</span><span class="font-bold text-cyan-600" id="menu-humidity">65%</span></div>
+        <div class="flex items-center justify-between"><span class="text-slate-600">☀️ Ánh sáng</span><span class="font-bold text-amber-600" id="menu-light">850 lux</span></div>
+      </div>
+      <button class="mobile-nav-item w-full text-left px-5 py-4 rounded-xl font-medium text-slate-600 hover:bg-slate-50 transition-all flex items-center gap-3 mt-4" onclick="switchPageMobile('esp32')"><i data-lucide="wifi" class="w-5 h-5 text-cyan-500"></i><span>ESP32 &amp; Cảm biến</span></button>
+      <button class="mobile-nav-item w-full text-left px-5 py-4 rounded-xl font-medium text-slate-600 hover:bg-slate-50 transition-all flex items-center gap-3" onclick="switchPageMobile('camera')"><i data-lucide="video" class="w-5 h-5 text-pink-500"></i><span>Camera</span></button>
+      <button class="mobile-nav-item w-full text-left px-5 py-4 rounded-xl font-medium text-slate-600 hover:bg-slate-50 transition-all flex items-center gap-3" onclick="switchPageMobile('upload')"><i data-lucide="sparkles" class="w-5 h-5 text-violet-500"></i><span>Tải ảnh &amp; Quét AI</span></button>
+      <button class="mobile-nav-item w-full text-left px-5 py-4 rounded-xl font-medium text-slate-600 hover:bg-slate-50 transition-all flex items-center gap-3" onclick="switchPageMobile('guide')"><i data-lucide="book-open" class="w-5 h-5 text-blue-500"></i><span>Hướng dẫn</span></button>
+      <button class="mobile-nav-item w-full text-left px-5 py-4 rounded-xl font-medium text-slate-600 hover:bg-slate-50 transition-all flex items-center gap-3" onclick="switchPageMobile('research')"><i data-lucide="file-text" class="w-5 h-5 text-teal-500"></i><span>Nghiên cứu</span></button>
+    </nav>
+    <div class="border-t border-slate-200 p-4 sm:p-6">
+      <button onclick="backToLogin()" class="w-full px-4 py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold transition-all flex items-center justify-center gap-2">
+        <i data-lucide="log-out" class="w-5 h-5"></i> Đăng xuất
+      </button>
+    </div>
+  </div>
+
+  <main class="flex-1 overflow-y-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+      {% include 'pages/dashboard.html' %}
+      {% include 'pages/my-farms.html' %}
+      {% include 'pages/esp32.html' %}
+      {% include 'pages/camera.html' %}
+      {% include 'pages/upload.html' %}
+      {% include 'pages/guide.html' %}
+      {% include 'pages/research.html' %}
+    </div>
+  </main>
+</div><!-- end main-app -->
+
+</div><!-- end #app -->
+
+{% include 'pages/modals.html' %}
+
+<!-- Toast -->
+<div id="toast" class="fixed bottom-4 right-4 bg-slate-800 text-white px-4 py-3 rounded-xl shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-2 z-50">
+  <i data-lucide="check-circle" class="w-5 h-5 text-green-400"></i>
+  <span id="toast-message">Thông báo</span>
+</div>
+
+<script src="db.js"></script>
+<script src="js/state.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/farms.js"></script>
+<script src="js/sensors.js"></script>
+<script src="js/camera.js"></script>
+<script src="js/ai_scanner.js"></script>
+</body>
+</html>

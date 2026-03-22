@@ -1,0 +1,27 @@
+<!-- ========== CHỌN THIẾT BỊ ========== -->
+<div id="device-screen" class="hidden min-h-screen flex items-center justify-center p-4 sm:p-6">
+  <div class="w-full max-w-sm">
+    <div class="text-center mb-8">
+      <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center shadow-lg">
+        <i data-lucide="leaf" class="w-8 h-8 text-white"></i>
+      </div>
+      <h1 class="text-3xl font-bold gradient-text mb-2">AI trong Nông Nghiệp</h1>
+      <p class="text-slate-500">Phát hiện thiếu chất dinh dưỡng cây trồng</p>
+    </div>
+    <div class="space-y-4">
+      <button onclick="selectDevice('desktop')" class="card-hover w-full bg-white rounded-2xl p-8 border border-slate-200 shadow-sm hover:shadow-lg transition-all text-center">
+        <div class="w-20 h-20 mx-auto mb-4 rounded-xl bg-blue-100 flex items-center justify-center"><i data-lucide="monitor" class="w-10 h-10 text-blue-600"></i></div>
+        <h3 class="text-xl font-bold text-slate-800 mb-2">Máy tính</h3>
+        <p class="text-sm text-slate-500">Dành cho desktop / laptop</p>
+      </button>
+      <button onclick="selectDevice('mobile')" class="card-hover w-full bg-white rounded-2xl p-8 border border-slate-200 shadow-sm hover:shadow-lg transition-all text-center">
+        <div class="w-20 h-20 mx-auto mb-4 rounded-xl bg-green-100 flex items-center justify-center"><i data-lucide="smartphone" class="w-10 h-10 text-green-600"></i></div>
+        <h3 class="text-xl font-bold text-slate-800 mb-2">Điện thoại</h3>
+        <p class="text-sm text-slate-500">Dành cho mobile</p>
+      </button>
+    </div>
+    <div class="text-center mt-8">
+      <button onclick="backToUserType()" class="text-slate-500 hover:text-slate-700 text-sm font-medium">← Quay lại chọn chế độ</button>
+    </div>
+  </div>
+</div>

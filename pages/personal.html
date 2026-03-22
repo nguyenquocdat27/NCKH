@@ -1,0 +1,39 @@
+<!-- ========== MÀN HÌNH CÁ NHÂN ========== -->
+<div id="personal-screen" class="hidden min-h-screen flex flex-col items-center justify-center p-6">
+  <div class="w-full max-w-sm">
+    <button type="button" onclick="goBack()" class="mb-6 flex items-center gap-2 text-slate-600 hover:text-black">
+      <i data-lucide="arrow-left" class="w-5 h-5"></i>
+      <span>Quay lại</span>
+    </button>
+    <h2 class="text-2xl font-bold mb-6 text-slate-800">Quét sâu bệnh cây trồng</h2>
+    <div class="w-full aspect-square border-2 border-dashed border-gray-300 rounded-2xl flex items-center justify-center bg-white mb-6 overflow-hidden">
+      <img id="preview-image" src="https://via.placeholder.com/300x300?text=Chọn+ảnh" class="max-h-full max-w-full object-contain"/>
+    </div>
+    <input type="file" id="imageInput" accept="image/*" class="hidden">
+    <video id="camera" class="hidden w-full rounded-2xl mb-4" autoplay playsinline></video>
+    <canvas id="canvas" class="hidden"></canvas>
+    <div class="flex gap-3 w-full mb-4">
+      <button onclick="chooseImage()" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-xl font-medium transition-colors">Chọn ảnh</button>
+      <button id="camera-btn" onclick="startCamera()" class="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-medium transition-colors">Chụp ảnh</button>
+      <button onclick="scanAI()" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-xl font-bold transition-colors">Quét AI</button>
+    </div>
+    <div id="ai-result-box" class="hidden w-full bg-white rounded-2xl border border-slate-200 shadow-sm p-5 analysis-result">
+      <div id="ai-loading" class="flex items-center gap-3 text-slate-500">
+        <svg class="animate-spin w-5 h-5 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+        </svg>
+        <span>AI đang phân tích...</span>
+      </div>
+      <div id="ai-result-content" class="hidden">
+        <div class="flex items-center gap-2 mb-3">
+          <div class="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
+            <i data-lucide="sparkles" class="w-4 h-4 text-purple-600"></i>
+          </div>
+          <h3 class="font-bold text-slate-800">Kết quả phân tích AI</h3>
+        </div>
+        <p id="ai-result-text" class="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap"></p>
+      </div>
+    </div>
+  </div>
+</div>

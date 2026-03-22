@@ -1,0 +1,58 @@
+      <!-- Upload & AI Scan -->
+      <div id="upload-page" class="page-content hidden">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center"><i data-lucide="sparkles" class="w-5 h-5 text-white"></i></div>
+          <div><h2 class="text-2xl font-bold text-slate-800">Tải ảnh &amp; Quét AI</h2><p class="text-sm text-slate-500">Tải ảnh cây ớt và phân tích bằng AI</p></div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          <div class="lg:col-span-2">
+            <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+              <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2"><i data-lucide="image" class="w-5 h-5 text-green-500"></i> Ảnh cây ớt</h3>
+              <div class="mb-4 bg-slate-900 rounded-xl overflow-hidden"><img id="upload-image-preview" class="camera-stream w-full" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='480'%3E%3Crect fill='%23222' width='640' height='480'/%3E%3Ctext x='320' y='240' text-anchor='middle' dy='.3em' fill='%23888' font-size='24'%3EChưa có ảnh%3C/text%3E%3C/svg%3E" alt="Upload preview"></div>
+            </div>
+          </div>
+          <div>
+            <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm sticky top-24">
+              <h3 class="text-lg font-semibold text-slate-800 mb-4">Tải lên</h3>
+              <div class="scan-box mb-4 flex items-center justify-center"><div class="scan-line"></div><div class="text-center"><i data-lucide="image" class="w-12 h-12 text-slate-300 mx-auto mb-2"></i><p class="text-sm text-slate-500">Kéo &amp; thả ảnh</p></div></div>
+              <input type="file" id="image-upload" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+              <button onclick="document.getElementById('image-upload').click()" class="w-full px-4 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white rounded-xl font-medium transition-all flex items-center justify-center gap-2 mb-3"><i data-lucide="camera" class="w-5 h-5"></i> Chọn ảnh</button>
+            </div>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-2">
+            <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+              <h3 class="text-lg font-semibold text-slate-800 mb-4">Quét ảnh cây ớt</h3>
+              <div class="mb-4 bg-slate-900 rounded-xl overflow-hidden"><img id="scan-image-preview" class="camera-stream w-full" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='480'%3E%3Crect fill='%23222' width='640' height='480'/%3E%3Ctext x='320' y='240' text-anchor='middle' dy='.3em' fill='%23888' font-size='24'%3EChưa có ảnh%3C/text%3E%3C/svg%3E" alt="Scan preview"></div>
+            </div>
+          </div>
+          <div>
+            <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm sticky top-24">
+              <h3 class="text-lg font-semibold text-slate-800 mb-4">Quét AI</h3>
+              <button onclick="scanImage()" class="w-full px-4 py-3 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white rounded-xl font-medium transition-all flex items-center justify-center gap-2 mb-3 disabled:opacity-50" id="scan-btn" disabled><i data-lucide="sparkles" class="w-5 h-5"></i> Quét AI</button>
+              <p class="text-xs text-slate-500 text-center">Tải ảnh trước để quét</p>
+            </div>
+          </div>
+        </div>
+        <div id="analysis-results" class="hidden mt-6">
+          <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm analysis-result w-full" id="pro-ai-result-box">
+            <div id="pro-ai-loading" class="flex items-center gap-3 text-slate-500 hidden">
+              <svg class="animate-spin w-5 h-5 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+              </svg>
+              <span>AI đang phân tích...</span>
+            </div>
+            <div id="pro-ai-result-content" class="hidden">
+              <div class="flex items-center gap-2 mb-3">
+                <div class="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                  <i data-lucide="sparkles" class="w-4 h-4 text-purple-600"></i>
+                </div>
+                <h3 class="font-bold text-slate-800">Kết quả phân tích AI</h3>
+              </div>
+              <div id="pro-ai-result-text" class="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap"></div>
+            </div>
+          </div>
+        </div>
+      </div>
