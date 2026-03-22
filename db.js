@@ -3,9 +3,7 @@
  * Quản lý: người dùng + nhà vườn
  * Import vào index.html: <script src="db.js"></script>
  */
-
-const DB_API = 'http://localhost:5000/api';
-
+const DB_API = '/api';
 // ========================================================
 // NGƯỜI DÙNG
 // ========================================================

@@ -12,17 +12,12 @@ from datetime import datetime
 db = SQLAlchemy()
 
 # ========================================================
-# ⚙️  CHỈ SỬA PHẦN NÀY — thông tin MySQL
+# ⚙️ CẤU HÌNH DATABASE (Đã chuyển sang SQLite cho dễ Deploy)
 # ========================================================
-DB_USER     = 'root'
-DB_PASSWORD = 'Dat0401*'   # ← đổi thành password của bạn
-DB_HOST     = 'localhost'
-DB_NAME     = 'nckh_nongnghiep'
-
-DB_URI = (
-    f'mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}'
-    '?charset=utf8mb4'
-)
+import os
+basedir = os.path.abspath(os.path.dirname(__file__))
+DB_URI = 'sqlite:///' + os.path.join(basedir, 'nckh_nongnghiep.db')
+# ========================================================
 # ========================================================
 
 
