@@ -1,4 +1,5 @@
 import io
+import os
 import base64
 from flask import Blueprint, request, jsonify
 from PIL import Image
@@ -84,6 +85,10 @@ def cam_to_heatmap_b64(cam, orig_img):
 def load_model():
     global model, gradcam
     try:
+        if not os.path.exists(MODEL_PATH):
+            print(f"⚠️  Không tìm thấy {MODEL_PATH} — Chạy chế độ DEMO")
+            return
+
         net    = models.resnet18(weights=None)
         net.fc = nn.Linear(net.fc.in_features, N_CLASSES)
         net.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE))
@@ -91,10 +96,9 @@ def load_model():
         model   = net
         gradcam = GradCAM(net)
         print(f"✅ Model: {MODEL_PATH} | Device: {DEVICE} | GradCAM: bật")
-    except FileNotFoundError:
-        print(f"⚠️  Không tìm thấy {MODEL_PATH} — DEMO mode")
     except Exception as e:
-        print(f"❌ Lỗi model: {e}")
+        print(f"❌ Lỗi model: {e} — Tự động chuyển qua chế độ DEMO")
+        model = None
 
 
 transform = transforms.Compose([
@@ -113,7 +117,7 @@ def get_severity(prob):
     return "Bình thường", "#10b981", "🟢"
 
 
-@ai_bp.route('/api/predict', methods=['POST'])
+@ai_bp.route('/predict', methods=['POST'])
 def predict():
     try:
         data = request.get_json()
@@ -174,7 +178,7 @@ def _build_response(scores, heatmaps, demo):
     })
 
 
-@ai_bp.route('/api/status')
+@ai_bp.route('/status')
 def status():
     return jsonify({
         'server': 'running', 'model_loaded': model is not None,

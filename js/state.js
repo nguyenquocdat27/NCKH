@@ -24,5 +24,5 @@ const NUTRIENT_COLORS = {
 // URL phục vụ Đăng nhập & Tạo Vườn (Của trang web chính, để rỗng là lấy tại chỗ)
 const BACKEND_URL = '';
 
-// URL phục vụ AI (Chỉ mặt Hugging Face)
-const AI_URL = '';
+// URL phục vụ AI (Hugging Face)
+const AI_URL = 'https://dat2709-nchk.hf.space';

@@ -3,7 +3,7 @@ from database import db, Vuon
 
 farms_bp = Blueprint('farms', __name__)
 
-@farms_bp.route('/api/vuons', methods=['POST'])
+@farms_bp.route('/vuons', methods=['POST'])
 def create_vuon():
     """Thêm vườn mới"""
     try:
@@ -27,7 +27,7 @@ def create_vuon():
         return jsonify({'error': str(e)}), 500
 
 
-@farms_bp.route('/api/vuons', methods=['GET'])
+@farms_bp.route('/vuons', methods=['GET'])
 def get_vuons():
     """Lấy tất cả vườn (hoặc lọc theo user_id)"""
     user_id = request.args.get('user_id')
@@ -38,14 +38,14 @@ def get_vuons():
     return jsonify([v.to_dict() for v in vuons])
 
 
-@farms_bp.route('/api/vuons/<int:vuon_id>', methods=['GET'])
+@farms_bp.route('/vuons/<int:vuon_id>', methods=['GET'])
 def get_vuon(vuon_id):
     """Lấy thông tin 1 vườn"""
     vuon = Vuon.query.get_or_404(vuon_id)
     return jsonify(vuon.to_dict())
 
 
-@farms_bp.route('/api/vuons/<int:vuon_id>', methods=['PUT'])
+@farms_bp.route('/vuons/<int:vuon_id>', methods=['PUT'])
 def update_vuon(vuon_id):
     """Cập nhật thông tin vườn"""
     try:
@@ -62,7 +62,7 @@ def update_vuon(vuon_id):
         return jsonify({'error': str(e)}), 500
 
 
-@farms_bp.route('/api/vuons/<int:vuon_id>', methods=['DELETE'])
+@farms_bp.route('/vuons/<int:vuon_id>', methods=['DELETE'])
 def delete_vuon(vuon_id):
     """Xóa vườn"""
     try:

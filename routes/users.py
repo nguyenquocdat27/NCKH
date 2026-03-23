@@ -3,7 +3,7 @@ from database import db, User
 
 users_bp = Blueprint('users', __name__)
 
-@users_bp.route('/api/login', methods=['POST'])
+@users_bp.route('/login', methods=['POST'])
 def login():
     """Đăng nhập — kiểm tra email + password"""
     try:
@@ -23,7 +23,7 @@ def login():
         return jsonify({'error': str(e)}), 500
 
 
-@users_bp.route('/api/users', methods=['POST'])
+@users_bp.route('/users', methods=['POST'])
 def create_user():
     """Tạo người dùng mới"""
     try:
@@ -49,21 +49,21 @@ def create_user():
         return jsonify({'error': str(e)}), 500
 
 
-@users_bp.route('/api/users', methods=['GET'])
+@users_bp.route('/users', methods=['GET'])
 def get_users():
     """Lấy danh sách người dùng"""
     users = User.query.order_by(User.ngay_tao.desc()).all()
     return jsonify([u.to_dict() for u in users])
 
 
-@users_bp.route('/api/users/<int:user_id>', methods=['GET'])
+@users_bp.route('/users/<int:user_id>', methods=['GET'])
 def get_user(user_id):
     """Lấy thông tin 1 người dùng"""
     user = User.query.get_or_404(user_id)
     return jsonify(user.to_dict())
 
 
-@users_bp.route('/api/users/<int:user_id>', methods=['PUT'])
+@users_bp.route('/users/<int:user_id>', methods=['PUT'])
 def update_user(user_id):
     """Cập nhật thông tin người dùng"""
     try:
@@ -78,7 +78,7 @@ def update_user(user_id):
         return jsonify({'error': str(e)}), 500
 
 
-@users_bp.route('/api/users/<int:user_id>', methods=['DELETE'])
+@users_bp.route('/users/<int:user_id>', methods=['DELETE'])
 def delete_user(user_id):
     """Xóa người dùng (kèm toàn bộ vườn)"""
     try:

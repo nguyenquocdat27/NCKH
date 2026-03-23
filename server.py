@@ -23,11 +23,11 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'nckh_nongnghiep_2026'
 
 # ========================================================
-# ĐĂNG KÝ BLUEPRINTS
+# ĐĂNG KÝ BLUEPRINTS (Chuẩn hóa tiền tố /api)
 # ========================================================
-app.register_blueprint(users_bp)
-app.register_blueprint(farms_bp)
-app.register_blueprint(ai_bp)
+app.register_blueprint(users_bp, url_prefix='/api')
+app.register_blueprint(farms_bp, url_prefix='/api')
+app.register_blueprint(ai_bp,    url_prefix='/api')
 
 # ========================================================
 # ROUTES STATIC FILES VÀ TRANG CHỦ
