@@ -8,24 +8,49 @@ function connectESP32() {
   showToast('Đang kết nối ESP32 và cảm biến...');
 }
 
-function showSensorChart(type) {
+async function showSensorChart(type) {
   const chartModal = document.getElementById('sensor-chart-modal');
   const chartTitle = document.getElementById('chart-title');
   const ctx = document.getElementById('sensorChart').getContext('2d');
 
-  let data, label, color, unit;
+  let data = [];
+  let labels = [];
+  let label = '';
+  let color = '';
+  let unit = '';
+
+  // 1. Lọc thông tin theo loại cảm biến
   switch(type) {
-    case 'temperature': data = sensorData.temperature; label = 'Nhiệt độ (°C)'; color = 'rgb(239,68,68)'; unit = '°C'; chartTitle.textContent = 'Biểu đồ Nhiệt độ'; break;
-    case 'humidity': data = sensorData.humidity; label = 'Độ ẩm (%)'; color = 'rgb(34,197,94)'; unit = '%'; chartTitle.textContent = 'Biểu đồ Độ ẩm'; break;
-    case 'light': data = sensorData.light; label = 'Ánh sáng (lux)'; color = 'rgb(217,119,6)'; unit = ' lux'; chartTitle.textContent = 'Biểu đồ Ánh sáng'; break;
+    case 'temperature': label = 'Nhiệt độ (°C)'; color = 'rgb(239,68,68)'; unit = '°C'; chartTitle.textContent = 'Biểu đồ Nhiệt độ'; break;
+    case 'humidity':    label = 'Độ ẩm (%)';    color = 'rgb(34,197,94)'; unit = '%';  chartTitle.textContent = 'Biểu đồ Độ ẩm';   break;
+    case 'light':       label = 'Ánh sáng (lux)'; color = 'rgb(217,119,6)'; unit = ' lux'; chartTitle.textContent = 'Biểu đồ Ánh sáng'; break;
   }
 
-  if (currentChart) currentChart.destroy();
+  // 2. Lấy dữ liệu (Từ API nếu có selectedFarmId, ngược lại dùng dummy)
+  if (selectedFarmId) {
+    try {
+      const history = await dbGetSensorHistory(selectedFarmId);
+      if (history && history.length > 0) {
+        labels = history.map(d => d.timestamp.split(' ')[0]); // Lấy giờ HH:mm:ss
+        data   = history.map(d => d[type]);
+      }
+    } catch (err) {
+      console.warn('Lỗi lấy dữ liệu sensor, dùng debug data:', err);
+    }
+  }
 
+  // Fallback nếu không có dữ liệu API
+  if (data.length === 0) {
+    data   = sensorData[type];
+    labels = sensorLabels;
+  }
+
+  // 3. Vẽ biểu đồ
+  if (currentChart) currentChart.destroy();
   currentChart = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: sensorLabels,
+      labels: labels,
       datasets: [{ label, data, borderColor: color, backgroundColor: color.replace('rgb', 'rgba').replace(')', ',0.1)'), borderWidth: 2, fill: true, tension: 0.4, pointBackgroundColor: color, pointRadius: 5 }]
     },
     options: {
@@ -35,6 +60,7 @@ function showSensorChart(type) {
     }
   });
 
+  // 4. Cập nhật thống kê
   const avg = (data.reduce((a,b) => a+b, 0) / data.length).toFixed(1);
   const max = Math.max(...data).toFixed(1);
   const min = Math.min(...data).toFixed(1);

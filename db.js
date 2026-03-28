@@ -92,6 +92,27 @@ async function dbDeleteVuon(vuonId) {
 
 
 // ========================================================
+// DỮ LIỆU CẢM BIẾN
+// ========================================================
+
+/** Lưu dữ liệu cảm biến mới (thường gọi từ ESP32, hoặc test) */
+async function dbSaveSensorData({ vuon_id, temperature, humidity, light }) {
+  const res = await fetch(`${DB_API}/sensors`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ vuon_id, temperature, humidity, light })
+  });
+  return res.json();
+}
+
+/** Lấy lịch sử dữ liệu cảm biến của 1 vườn */
+async function dbGetSensorHistory(vuonId, limit = 20) {
+  const res = await fetch(`${DB_API}/sensors/${vuonId}?limit=${limit}`);
+  return res.json();
+}
+
+
+// ========================================================
 // VÍ DỤ SỬ DỤNG (xóa khi deploy)
 // ========================================================
 /*

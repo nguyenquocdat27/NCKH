@@ -21,8 +21,8 @@ const NUTRIENT_COLORS = {
   N:  '#3b82f6', P: '#10b981', S: '#f59e0b', Zn: '#06b6d4'
 };
 
-// URL phục vụ Đăng nhập & Tạo Vườn (Của trang web chính, để rỗng là lấy tại chỗ)
-const BACKEND_URL = '';
+// URL phục vụ Đăng nhập & Tạo Vườn
+const BACKEND_URL = ''; // Để rỗng nếu backend cùng host với frontend
 
-// URL phục vụ AI (Hugging Face)
-const AI_URL = 'https://dat2709-nchk.hf.space';
+// URL phục vụ AI
+const AI_URL = ''; // Để rỗng nếu backend cùng host

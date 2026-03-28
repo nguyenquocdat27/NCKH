@@ -1,25 +1,27 @@
-"""
-database.py — Quản lý MySQL
-Bảng: users (người dùng) + vuons (nhà vườn)
-
-Cách dùng: import từ server.py
-  from database import db, User, Vuon, init_db
-"""
-
+import os
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 
 db = SQLAlchemy()
 
 # ========================================================
-# ⚙️ CẤU HÌNH DATABASE (Đã chuyển sang SQLite cho dễ Deploy)
+# ⚙️ CẤU HÌNH DATABASE (Ưu tiên MySQL từ Môi trường)
 # ========================================================
-import os
-basedir = os.path.abspath(os.path.dirname(__file__))
-DB_URI = 'sqlite:///' + os.path.join(basedir, 'nckh_nongnghiep.db')
-# ========================================================
-# ========================================================
+# Định dạng MySQL: mysql+pymysql://user:password@host:port/dbname
+# SQLite dự phòng: sqlite:///nckh_nongnghiep.db
 
+# Ưu tiên lấy từ biến môi trường (Cho Render)
+DB_URI = os.getenv('DATABASE_URL')
+
+# Nếu không có biến môi trường, hãy cấu hình ở đây
+if not DB_URI:
+    # BỎ dấu # ở dòng dưới để dùng MySQL (TiDB Cloud)
+    # DB_URI = 'mysql+pymysql://2s4cbshgjt2rqzt.root:BO3ldmpvD4A0hKqH@gateway01.ap-southeast-1.prod.aws.tidbcloud.com:4000/test'
+    
+    # Nếu dòng trên vẫn bị đóng (#), nó sẽ dùng SQLite dưới đây
+    if not DB_URI:
+        basedir = os.path.abspath(os.path.dirname(__file__))
+        DB_URI = 'sqlite:///' + os.path.join(basedir, 'nckh_nongnghiep.db')
 
 # ========================================================
 # BẢNG NGƯỜI DÙNG
@@ -63,6 +65,10 @@ class Vuon(db.Model):
     ghi_chu     = db.Column(db.Text)
     ngay_tao    = db.Column(db.DateTime, default=datetime.utcnow)
 
+    # Quan hệ với cảm biến
+    sensors = db.relationship('SensorData', backref='thuoc_vuon', lazy=True,
+                               cascade='all, delete-orphan')
+
     def to_dict(self):
         return {
             'id':       self.id,
@@ -76,11 +82,38 @@ class Vuon(db.Model):
 
 
 # ========================================================
+# BẢNG DỮ LIỆU CẢM BIẾN
+# ========================================================
+class SensorData(db.Model):
+    __tablename__ = 'sensor_data'
+
+    id          = db.Column(db.Integer, primary_key=True)
+    vuon_id     = db.Column(db.Integer, db.ForeignKey('vuons.id'), nullable=False)
+    temperature = db.Column(db.Float)
+    humidity    = db.Column(db.Float)
+    light       = db.Column(db.Float)
+    timestamp   = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id':          self.id,
+            'vuon_id':     self.vuon_id,
+            'temperature': self.temperature,
+            'humidity':    self.humidity,
+            'light':       self.light,
+            'timestamp':   self.timestamp.strftime('%H:%M:%S %d/%m/%Y'),
+        }
+
+
+# ========================================================
 # KHỞI TẠO — tạo bảng nếu chưa có
 # ========================================================
 def init_db(app):
     db.init_app(app)
     with app.app_context():
-        db.create_all()
-        print("✅ Database sẵn sàng!")
-        print("   Bảng: users, vuons")
+        try:
+            db.create_all()
+            print("✅ Database sẵn sàng!")
+            print("   Bảng: users, vuons, sensor_data")
+        except Exception as e:
+            print(f"❌ Lỗi khởi tạo DB: {e}")
