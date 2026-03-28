@@ -178,11 +178,3 @@ def status():
         'ai_mode': 'huggingface' if HF_API_URL else ('local' if model else 'demo'),
         'has_torch': HAS_TORCH
     })
-
-@ai_bp.route('/status')
-def status():
-    return jsonify({
-        'server': 'running',
-        'ai_mode': 'huggingface' if HF_API_URL else ('local' if model else 'demo'),
-        'has_torch': HAS_TORCH
-    })
