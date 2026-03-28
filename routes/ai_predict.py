@@ -96,13 +96,18 @@ def predict():
 
         # MODO 1: Hugging Face (Augmented)
         if HF_API_URL:
-            headers = {"Authorization": f"Bearer {HF_TOKEN}"} if HF_TOKEN else {}
-            response = requests.post(HF_API_URL, json=data, headers=headers, timeout=30)
-            if response.status_code == 200:
-                res_data = response.json()
-                # Bổ sung/Ghi đè lời khuyên tiếng Việt từ Backend vào response của HF
-                return _build_response(res_data.get('scores', {}), res_data.get('heatmaps', {}), demo=False)
-            return jsonify({'error': f'HF API Error: {response.text}'}), 502
+            try:
+                headers = {"Authorization": f"Bearer {HF_TOKEN}"} if HF_TOKEN else {}
+                response = requests.post(HF_API_URL, json=data, headers=headers, timeout=30)
+                if response.status_code == 200:
+                    res_data = response.json()
+                    return _build_response(res_data.get('scores', {}), res_data.get('heatmaps', {}), demo=False)
+                
+                # Trả về lỗi chi tiết từ HF
+                error_msg = f"Hugging Face Error ({response.status_code}): {response.text[:200]}"
+                return jsonify({'error': error_msg}), 502
+            except requests.exceptions.RequestException as e:
+                return jsonify({'error': f"Không thể kết nối tới Hugging Face: {str(e)}"}), 503
 
         # MODO 2: Local
         if model and HAS_TORCH:
