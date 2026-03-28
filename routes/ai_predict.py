@@ -91,26 +91,52 @@ def load_model():
 def predict():
     try:
         data = request.get_json()
+        print("🔗 [DEBUG] Nhận yêu cầu /predict")
+        
         if not data or 'image' not in data:
+            print("❌ [DEBUG] Thiếu ảnh trong request")
             return jsonify({'error': 'Thiếu ảnh'}), 400
 
         # MODO 1: Hugging Face (Augmented)
         if HF_API_URL:
+            print(f"📡 [DEBUG] Đang gửi yêu cầu tới HF: {HF_API_URL}")
             try:
                 headers = {"Authorization": f"Bearer {HF_TOKEN}"} if HF_TOKEN else {}
+                # Đồng bộ định dạng với Space (Nếu Space dùng Gradio thì có thể cần bọc trong "data")
+                # Ở đây chúng ta gửi thẳng "image" vì Space của chúng ta đang code như vậy
                 response = requests.post(HF_API_URL, json=data, headers=headers, timeout=30)
+                print(f"📥 [DEBUG] HF Status Code: {response.status_code}")
+                
                 if response.status_code == 200:
                     res_data = response.json()
-                    return _build_response(res_data.get('scores', {}), res_data.get('heatmaps', {}), demo=False)
+                    print(f"📝 [DEBUG] HF Response: {str(res_data)[:200]}...")
+                    
+                    # Chuyển đổi định dạng nếu HF trả về list (Gradio chuẩn)
+                    scores = res_data.get('scores', {})
+                    if not scores and 'data' in res_data:
+                        raw_data = res_data['data']
+                        if isinstance(raw_data, list) and len(raw_data) > 0:
+                            # Giả sử HF trả về list các nhãn và độ tin cậy
+                            # Format: [{"label": "N", "conf": 0.9}, ...] hoặc tương tự
+                            print(f"🔄 [DEBUG] Chuyển đổi format HF sang Scores")
+                            if isinstance(raw_data[0], dict):
+                                scores = {item['label']: item.get('conf', item.get('score', 0)) for item in raw_data if 'label' in item}
+                            elif isinstance(raw_data[0], list):
+                                # Format Gradio cũ: [["N", 0.9], ["P", 0.1]]
+                                scores = {item[0]: item[1] for item in raw_data}
+
+                    return _build_response(scores, res_data.get('heatmaps', {}), demo=False)
                 
-                # Trả về lỗi chi tiết từ HF
-                error_msg = f"Hugging Face Error ({response.status_code}): {response.text[:200]}"
+                error_msg = f"HF Error ({response.status_code}): {response.text[:200]}"
+                print(f"❌ [DEBUG] {error_msg}")
                 return jsonify({'error': error_msg}), 502
-            except requests.exceptions.RequestException as e:
-                return jsonify({'error': f"Không thể kết nối tới Hugging Face: {str(e)}"}), 503
+            except Exception as e:
+                print(f"❌ [DEBUG] Lỗi kết nối HF: {str(e)}")
+                return jsonify({'error': f"Lỗi kết nối HF: {str(e)}"}), 503
 
         # MODO 2: Local
         if model and HAS_TORCH:
+            print("🏠 [DEBUG] Đang chạy Local AI")
             from PIL import Image
             import io
             img_data = base64.b64decode(data['image'].split(',')[1] if ',' in data['image'] else data['image'])
@@ -129,12 +155,16 @@ def predict():
             return _build_response(scores, {}, demo=False)
 
         # MODO 3: Demo
+        print("💡 [DEBUG] Đang chạy chế độ DEMO")
         import random
         scores = {n: round(random.uniform(0.05, 0.95), 3) for n in NUTRIENTS}
         return _build_response(scores, {}, demo=True)
 
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        import traceback
+        print(f"🔥 [CRITICAL] Lỗi hệ thống: {str(e)}")
+        traceback.print_exc()
+        return jsonify({'error': f"Lỗi Server (500): {str(e)}"}), 500
 
 def _get_severity(prob):
     for (lo, hi), val in SEVERITY_LEVELS.items():
