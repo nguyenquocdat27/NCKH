@@ -68,7 +68,36 @@ async function showSensorChart(type) {
   document.getElementById('max-value').textContent = max + unit;
   document.getElementById('min-value').textContent = min + unit;
 
+  // 5. Cập nhật Bảng lịch sử (Nếu có dữ liệu thật)
+  if (selectedFarmId) {
+    const history = await dbGetSensorHistory(selectedFarmId, 10);
+    renderSensorHistoryTable(history);
+  }
+
   chartModal.classList.add('active');
+}
+
+/** Hiển thị dữ liệu vào bảng lịch sử trên trang ESP32 */
+function renderSensorHistoryTable(history) {
+  const tbody = document.querySelector('#esp32-page tbody');
+  if (!tbody || !history) return;
+
+  if (history.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-8 text-center text-slate-400 italic">Chưa có dữ liệu cảm biến</td></tr>';
+    return;
+  }
+
+  // Sắp xếp mới nhất lên đầu cho bảng
+  const sortedHistory = [...history].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+  tbody.innerHTML = sortedHistory.map(d => `
+    <tr class="hover:bg-slate-50 transition-colors">
+      <td class="px-4 py-3 text-slate-600 font-medium">${d.timestamp.split(' ')[0]}</td>
+      <td class="text-center font-bold text-red-600">${d.temperature}°C</td>
+      <td class="text-center font-bold text-cyan-600">${d.humidity}%</td>
+      <td class="text-center font-bold text-amber-600">${d.light} lux</td>
+    </tr>
+  `).join('');
 }
 
 function closeSensorChart() {

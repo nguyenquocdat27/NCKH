@@ -56,7 +56,7 @@ def static_files(filename):
 # ========================================================
 with app.app_context():
     init_db(app)
-    # load_model()  <-- Bỏ cài này trên Render để tiết kiệm RAM (vì đã dùng Hugging Face)
+    load_model()
 
 # ========================================================
 # CHỈ KHỞI CHẠY THỦ CÔNG (Dành cho máy tính cá nhân)
