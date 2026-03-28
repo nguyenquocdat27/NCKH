@@ -40,12 +40,20 @@ SEVERITY_LEVELS = {
     (0.80, 1.01): ("Nặng",       "#ef4444", "🔴"),
 }
 
-RECOMMENDATIONS = {n: f"Bổ sung {n}" for n in NUTRIENTS}
+RECOMMENDATIONS = {
+    "N":  "Bổ sung phân Đạm (Urê), tỉa bớt lá già, tưới đủ nước để cây hấp thụ tốt hơn.",
+    "P":  "Bổ sung phân Lân (Super lân), kiểm tra độ pH đất, nếu đất chua cần bón thêm vôi.",
+    "K":  "Bổ sung Kali (K2SO4 hoặc KCl), giúp cây chịu hạn và tăng cường vận chuyển nước.",
+    "Ca": "Bón thêm vôi bột hoặc Canxi Nitrate để cải thiện cấu trúc tế bào lá mới.",
+    "Mn": "Phun phân bón lá chứa Mangan Sunfat, tránh để đất quá kiềm (pH cao).",
+    "S":  "Bổ sung phân bón chứa Lưu huỳnh (như thạch cao bón đất hoặc phân SA).",
+    "Zn": "Phun Kẽm Sunfat (ZnSO4) trực tiếp lên lá để cây phục hồi nhanh nhất.",
+}
 
 model = None
 gradcam = None
 
-# --- LOCAL TORCH LOGIC (Sẽ bỏ qua nếu dùng HF) ---
+# --- LOCAL TORCH LOGIC ---
 if HAS_TORCH:
     DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     class GradCAM:
@@ -86,16 +94,17 @@ def predict():
         if not data or 'image' not in data:
             return jsonify({'error': 'Thiếu ảnh'}), 400
 
-        # MODO 1: Dùng Hugging Face API
+        # MODO 1: Hugging Face (Augmented)
         if HF_API_URL:
-            # Gửi ảnh base64 sang HF Space
             headers = {"Authorization": f"Bearer {HF_TOKEN}"} if HF_TOKEN else {}
             response = requests.post(HF_API_URL, json=data, headers=headers, timeout=30)
             if response.status_code == 200:
-                return jsonify(response.json())
+                res_data = response.json()
+                # Bổ sung/Ghi đè lời khuyên tiếng Việt từ Backend vào response của HF
+                return _build_response(res_data.get('scores', {}), res_data.get('heatmaps', {}), demo=False)
             return jsonify({'error': f'HF API Error: {response.text}'}), 502
 
-        # MODO 2: Chạy Local (Nếu có model)
+        # MODO 2: Local
         if model and HAS_TORCH:
             from PIL import Image
             import io
@@ -114,7 +123,7 @@ def predict():
             scores = {NUTRIENTS[i]: round(probs[i], 4) for i in range(N_CLASSES)}
             return _build_response(scores, {}, demo=False)
 
-        # MODO 3: Demo (Nếu không có gì cả)
+        # MODO 3: Demo
         import random
         scores = {n: round(random.uniform(0.05, 0.95), 3) for n in NUTRIENTS}
         return _build_response(scores, {}, demo=True)
@@ -129,17 +138,45 @@ def _get_severity(prob):
 
 def _build_response(scores, heatmaps, demo):
     deficient = [n for n, p in scores.items() if p >= THRESHOLD]
+    healthy   = len(deficient) == 0
     detail = []
+    
     for n in deficient:
         sl, sc, si = _get_severity(scores[n])
         detail.append({
             'nutrient': n, 'name': NUTRIENT_NAMES.get(n, n),
             'probability': scores[n], 'severity': sl, 'severity_color': sc, 'severity_icon': si,
-            'recommendation': RECOMMENDATIONS.get(n, ""), 'heatmap': heatmaps.get(n)
+            'recommendation': RECOMMENDATIONS.get(n, "Cần theo dõi thêm."),
+            'heatmap': heatmaps.get(n)
         })
+    
+    # Sắp xếp theo xác suất giảm dần
+    detail.sort(key=lambda x: x['probability'], reverse=True)
+    
+    # Tạo danh sách lời khuyên tổng hợp
+    recs = []
+    if healthy:
+        recs.append("✅ Cây có vẻ khỏe mạnh! Hãy duy trì chế độ phân bón và nước tưới hiện tại.")
+    else:
+        for d in detail:
+            recs.append(f"{d['severity_icon']} **{d['name']} ({d['severity']})**: {d['recommendation']}")
+
     return jsonify({
-        'healthy': len(deficient) == 0, 'deficient_detail': detail,
-        'scores': scores, 'demo_mode': demo, 'threshold': THRESHOLD
+        'healthy': healthy,
+        'deficient_detail': detail,
+        'deficient_names': [NUTRIENT_NAMES.get(n, n) for n in deficient],
+        'scores': scores,
+        'recommendations': recs,
+        'demo_mode': demo,
+        'threshold': THRESHOLD
+    })
+
+@ai_bp.route('/status')
+def status():
+    return jsonify({
+        'server': 'running',
+        'ai_mode': 'huggingface' if HF_API_URL else ('local' if model else 'demo'),
+        'has_torch': HAS_TORCH
     })
 
 @ai_bp.route('/status')
