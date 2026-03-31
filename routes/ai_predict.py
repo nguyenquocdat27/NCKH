@@ -9,7 +9,7 @@ ai_bp = Blueprint('ai', __name__)
 # ========================================================
 # CẤU HÌNH AI (Ưu tiên Hugging Face để tiết kiệm RAM)
 # ========================================================
-HF_API_URL = os.getenv('HUGGINGFACE_API_URL') # Ví dụ: "https://dat2709-nchk.hf.space/api/predict" (tùy API của Space)
+HF_API_URL = os.getenv("https://dat2709-nghiencuu.hf.space/api/predict") # Ví dụ: "https://dat2709-nchk.hf.space/api/predict" (tùy API của Space)
 HF_TOKEN   = os.getenv('HUGGINGFACE_TOKEN')
 
 # Cấu hình local (Chỉ dùng nếu không có HF_API_URL và có RAM > 1GB)
