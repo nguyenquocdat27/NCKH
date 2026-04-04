@@ -7,6 +7,8 @@ from torchvision import models
 from torchvision.transforms import functional as TF
 from PIL import Image
 import gradio as gr
+import matplotlib.pyplot as plt
+import numpy as np
 
 print(f"[STARTUP] torch={torch.__version__}")
 try:
@@ -46,6 +48,59 @@ def get_model():
 model = get_model()
 
 # ========================================================
+# GRAD-CAM IMPLEMENTATION
+# ========================================================
+class GradCAM:
+    def __init__(self, net):
+        self.net = net
+        self.gradients = None
+        self.activations = None
+        # Hook layer4 của ResNet18
+        if hasattr(net, 'layer4'):
+            net.layer4.register_forward_hook(self.save_activations)
+            net.layer4.register_full_backward_hook(self.save_gradients)
+
+    def save_activations(self, module, input, output):
+        self.activations = output.detach()
+
+    def save_gradients(self, module, grad_input, grad_output):
+        self.gradients = grad_output[0].detach()
+
+    def generate(self, tensor, class_idx):
+        self.net.zero_grad()
+        output = self.net(tensor)
+        target = output[0, class_idx]
+        target.backward(retain_graph=True)
+        
+        if self.gradients is None or self.activations is None:
+            return np.zeros((7, 7))  # Dummy fallback
+            
+        weights = self.gradients.mean(dim=[2, 3], keepdim=True)
+        cam = torch.relu((weights * self.activations).sum(dim=1).squeeze())
+        cam_max = cam.max()
+        if cam_max > 0:
+            cam = cam / cam_max
+        return cam.cpu().numpy()
+
+gradcam = GradCAM(model)
+
+def generate_heatmap_base64(cam_np, orig_img: Image.Image) -> str:
+    # Scale heatmap to image size
+    cam_img = Image.fromarray(np.uint8(255 * cam_np)).resize(orig_img.size, Image.BILINEAR)
+    # Apply JET colormap
+    cm = plt.get_cmap('jet')
+    heatmap_colored = cm(np.array(cam_img) / 255.0)[:, :, :3]
+    heatmap_colored_img = Image.fromarray((heatmap_colored * 255).astype(np.uint8))
+    # Blend images
+    overlay = Image.blend(orig_img.convert("RGB"), heatmap_colored_img, alpha=0.5)
+    
+    # Save to base64
+    buffered = io.BytesIO()
+    overlay.save(buffered, format="JPEG", quality=85)
+    img_str = base64.b64encode(buffered.getvalue()).decode()
+    return f"data:image/jpeg;base64,{img_str}"
+
+# ========================================================
 # INFERENCE LOGIC
 # ========================================================
 # Normalize constants
@@ -76,18 +131,29 @@ def predict_image(image_input):
     else:
         img = image_input.convert("RGB")
 
-    # Transform & Run (numpy-free)
+    # Transform & Run
     input_tensor = pil_to_tensor_normalized(img).unsqueeze(0).to(DEVICE)
-    with torch.no_grad():
+    
+    # Forward Pass requires gradients enabled for Grad-CAM
+    with torch.set_grad_enabled(True):
+        input_tensor.requires_grad_()
         outputs = model(input_tensor)
-        probs = torch.sigmoid(outputs[0]).cpu().tolist()
+        probs = torch.sigmoid(outputs[0]).cpu().detach().tolist()
+        
     print(f"[PREDICT] probs={[round(p,3) for p in probs]}")
-
     scores = {NUTRIENTS[i]: round(probs[i], 4) for i in range(N_CLASSES)}
+
+    # Generate heatmaps only for nutrients with probability >= 0.5 to save time
+    heatmaps = {}
+    with torch.set_grad_enabled(True):
+        for i, val in enumerate(probs):
+            if val >= 0.5:
+                cam = gradcam.generate(input_tensor, i)
+                heatmaps[NUTRIENTS[i]] = generate_heatmap_base64(cam, img)
 
     return {
         "scores": scores,
-        "heatmaps": {}  # Grad-CAM placeholder
+        "heatmaps": heatmaps
     }
 
 # ========================================================
