@@ -9,8 +9,16 @@ ai_bp = Blueprint('ai', __name__)
 # ========================================================
 # CẤU HÌNH AI (Ưu tiên Hugging Face để tiết kiệm RAM)
 # ========================================================
-HF_API_URL = os.getenv('HUGGINGFACE_API_URL') # Ví dụ: "https://dat2709-nchk.hf.space/api/predict" (tùy API của Space)
+HF_API_URL = os.getenv('HUGGINGFACE_API_URL') # Ví dụ: "https://dat2709-nghiencuu.hf.space/"
 HF_TOKEN   = os.getenv('HUGGINGFACE_TOKEN')
+# Add fallback space if env var is missing
+if not HF_API_URL:
+    HF_API_URL = "dat2709/nghiencuu" # Can pass HF space ID to gradio_client Directly
+
+try:
+    from gradio_client import Client, handle_file
+except ImportError:
+    pass
 
 # Cấu hình local (Chỉ dùng nếu không có HF_API_URL và có RAM > 1GB)
 try:
@@ -101,37 +109,46 @@ def predict():
         if HF_API_URL:
             print(f"📡 [DEBUG] Đang gửi yêu cầu tới HF: {HF_API_URL}")
             try:
-                headers = {"Authorization": f"Bearer {HF_TOKEN}"} if HF_TOKEN else {}
-                # Đồng bộ định dạng với Space (Nếu Space dùng Gradio thì có thể cần bọc trong "data")
-                # Ở đây chúng ta gửi thẳng "image" vì Space của chúng ta đang code như vậy
-                response = requests.post(HF_API_URL, json=data, headers=headers, timeout=30)
-                print(f"📥 [DEBUG] HF Status Code: {response.status_code}")
+                # Dùng gradio_client thay vì requests thô
+                client = Client(HF_API_URL, token=HF_TOKEN)
                 
-                if response.status_code == 200:
-                    res_data = response.json()
-                    print(f"📝 [DEBUG] HF Response: {str(res_data)[:200]}...")
-                    
-                    # Chuyển đổi định dạng nếu HF trả về list (Gradio chuẩn)
-                    scores = res_data.get('scores', {})
-                    if not scores and 'data' in res_data:
-                        raw_data = res_data['data']
-                        if isinstance(raw_data, list) and len(raw_data) > 0:
-                            # Giả sử HF trả về list các nhãn và độ tin cậy
-                            # Format: [{"label": "N", "conf": 0.9}, ...] hoặc tương tự
-                            print(f"🔄 [DEBUG] Chuyển đổi format HF sang Scores")
-                            if isinstance(raw_data[0], dict):
-                                scores = {item['label']: item.get('conf', item.get('score', 0)) for item in raw_data if 'label' in item}
-                            elif isinstance(raw_data[0], list):
-                                # Format Gradio cũ: [["N", 0.9], ["P", 0.1]]
-                                scores = {item[0]: item[1] for item in raw_data}
+                # Để an toàn, chúng ta chuyển base64 thành file tạm thời
+                import tempfile
+                import base64
+                img_data = data['image']
+                if ',' in img_data:
+                    img_data = img_data.split(',')[1]
+                
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp:
+                    tmp.write(base64.b64decode(img_data))
+                    tmp_file_path = tmp.name
 
-                    return _build_response(scores, res_data.get('heatmaps', {}), demo=False)
+                print("📡 [DEBUG] Đang gọi client.predict...")
+                res_data = client.predict(
+                    image_input=handle_file(tmp_file_path),
+                    api_name="/predict"
+                )
                 
-                error_msg = f"HF Error ({response.status_code}): {response.text[:200]}"
-                print(f"❌ [DEBUG] {error_msg}")
-                return jsonify({'error': error_msg}), 502
+                os.remove(tmp_file_path) # Xóa file sau khi scan xong
+                
+                print(f"📝 [DEBUG] HF Processed: {str(res_data)[:200]}...")
+                
+                if isinstance(res_data, str):
+                    import json
+                    res_data = json.loads(res_data)
+                
+                scores = res_data.get('scores', {})
+                if not scores:
+                    # Fallback
+                    if isinstance(res_data, list):
+                        scores = {item[0]: item[1] for item in res_data}
+                        
+                return _build_response(scores, res_data.get('heatmaps', {}), demo=False)
+                
             except Exception as e:
-                print(f"❌ [DEBUG] Lỗi kết nối HF: {str(e)}")
+                import traceback
+                traceback.print_exc()
+                print(f"❌ [DEBUG] Lỗi kết nối HF qua gradio_client: {str(e)}")
                 return jsonify({'error': f"Lỗi kết nối HF: {str(e)}"}), 503
 
         # MODO 2: Local

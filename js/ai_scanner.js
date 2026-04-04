@@ -95,7 +95,7 @@ async function processAndRenderAI(imageData, loadingEl, contentEl, resultText) {
       : `<div class="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl mb-3">
            <span class="text-2xl">🔍</span>
            <div>
-             <p class="font-bold text-red-700">Phát hiện thiếu ${result.deficient_nutrients.length} chất</p>
+             <p class="font-bold text-red-700">Phát hiện thiếu ${result.deficient_names.length} chất</p>
              <p class="text-xs text-red-600">${result.deficient_names.join(' · ')}</p>
            </div>
          </div>`;
@@ -126,7 +126,7 @@ async function processAndRenderAI(imageData, loadingEl, contentEl, resultText) {
     `;
 
     if (window.lucide) window.lucide.createIcons();
-    const msg = result.healthy ? '✅ Cây khỏe mạnh!' : `⚠️ Thiếu: ${result.deficient_nutrients.join(', ')}`;
+    const msg = result.healthy ? '✅ Cây khỏe mạnh!' : `⚠️ Thiếu: ${result.deficient_names.join(', ')}`;
     if (window.showToast) window.showToast(msg);
 
   } catch (err) {
