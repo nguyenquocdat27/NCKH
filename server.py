@@ -23,12 +23,14 @@ app.config['SQLALCHEMY_DATABASE_URI'] = DB_URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'nckh_nongnghiep_2026'
 
-# Cấu hình SSL cho TiDB Cloud (bắt buộc cho Serverless)
 if 'tidbcloud.com' in (DB_URI or ''):
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
         "connect_args": {
-            "ssl": {"ssl_mode": "REQUIRED"}
-        }
+            "ssl": {"ssl_mode": "REQUIRED"},
+            "connect_timeout": 5,   # Tiết kiệm RAM, timeout nhanh nếu TiDB pause
+        },
+        "pool_pre_ping": True,
+        "pool_recycle": 300,
     }
 
 # ========================================================

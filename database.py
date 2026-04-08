@@ -116,4 +116,17 @@ def init_db(app):
             print("✅ Database sẵn sàng!")
             print("   Bảng: users, vuons, sensor_data")
         except Exception as e:
-            print(f"❌ Lỗi khởi tạo DB: {e}")
+            print(f"⚠️  TiDB không phản hồi ({e}) — chuyển sang SQLite dự phòng!")
+            # Fallback về SQLite nếu TiDB bị pause
+            basedir = os.path.abspath(os.path.dirname(__file__))
+            fallback_uri = 'sqlite:///' + os.path.join(basedir, 'nckh_nongnghiep.db')
+            app.config['SQLALCHEMY_DATABASE_URI'] = fallback_uri
+            app.config.pop('SQLALCHEMY_ENGINE_OPTIONS', None)
+            # Reinitialize với SQLite
+            db.engine.dispose()
+            try:
+                db.create_all()
+                print("✅ Database SQLite dự phòng đã sẵn sàng!")
+            except Exception as e2:
+                print(f"❌ Lỗi SQLite: {e2}")
+
