@@ -60,6 +60,7 @@ RECOMMENDATIONS = {
 
 model = None
 gradcam = None
+_hf_client = None  # Cache gradio_client — chỉ tạo 1 lần
 
 # --- LOCAL TORCH LOGIC ---
 if HAS_TORCH:
@@ -76,6 +77,19 @@ if HAS_TORCH:
             weights = self.gradients.mean(dim=[2, 3], keepdim=True)
             cam = torch.relu((weights * self.activations).sum(dim=1).squeeze()).cpu().numpy()
             return cam / cam.max() if cam.max() > 0 else cam
+
+def _get_hf_client():
+    """Lấy hoặc tạo HF client (chỉ tạo 1 lần để tiết kiệm RAM)."""
+    global _hf_client
+    if _hf_client is None:
+        try:
+            from gradio_client import Client
+            _hf_client = Client(HF_API_URL, token=HF_TOKEN)
+            print(f"✅ HF Client đã kết nối: {HF_API_URL}")
+        except Exception as e:
+            print(f"⚠️ Không thể tạo HF Client: {e}")
+            _hf_client = None
+    return _hf_client
 
 def load_model():
     global model, gradcam
@@ -105,51 +119,64 @@ def predict():
             print("❌ [DEBUG] Thiếu ảnh trong request")
             return jsonify({'error': 'Thiếu ảnh'}), 400
 
-        # MODO 1: Hugging Face (Augmented)
+        # MODO 1: Hugging Face (dùng client được cache)
         if HF_API_URL:
             print(f"📡 [DEBUG] Đang gửi yêu cầu tới HF: {HF_API_URL}")
             try:
-                # Dùng gradio_client thay vì requests thô
-                client = Client(HF_API_URL, token=HF_TOKEN)
-                
-                # Để an toàn, chúng ta chuyển base64 thành file tạm thời
+                from gradio_client import handle_file
                 import tempfile
-                import base64
+
                 img_data = data['image']
                 if ',' in img_data:
                     img_data = img_data.split(',')[1]
-                
+
                 with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp:
                     tmp.write(base64.b64decode(img_data))
                     tmp_file_path = tmp.name
 
-                print("📡 [DEBUG] Đang gọi client.predict...")
-                res_data = client.predict(
-                    image_input=handle_file(tmp_file_path),
-                    api_name="/predict"
-                )
-                
-                os.remove(tmp_file_path) # Xóa file sau khi scan xong
-                
+                # Thử tối đa 2 lần (HF Space có thể đang cold-start)
+                last_error = None
+                for attempt in range(2):
+                    try:
+                        global _hf_client
+                        client = _get_hf_client()
+                        if client is None:
+                            raise Exception("Không thể kết nối HF Space")
+                        print(f"📡 [DEBUG] Attempt {attempt+1}: Đang gọi client.predict...")
+                        res_data = client.predict(
+                            image_input=handle_file(tmp_file_path),
+                            api_name="/predict"
+                        )
+                        break  # Thành công → thoát vòng lặp
+                    except Exception as e:
+                        last_error = e
+                        print(f"⚠️ Attempt {attempt+1} thất bại: {e} — reset client...")
+                        _hf_client = None  # Reset để lần sau tạo lại
+                else:
+                    raise last_error  # Cả 2 lần đều thất bại
+
+                try:
+                    os.remove(tmp_file_path)
+                except:
+                    pass
+
                 print(f"📝 [DEBUG] HF Processed: {str(res_data)[:200]}...")
-                
+
                 if isinstance(res_data, str):
                     import json
                     res_data = json.loads(res_data)
-                
+
                 scores = res_data.get('scores', {})
-                if not scores:
-                    # Fallback
-                    if isinstance(res_data, list):
-                        scores = {item[0]: item[1] for item in res_data}
-                        
+                if not scores and isinstance(res_data, list):
+                    scores = {item[0]: item[1] for item in res_data}
+
                 return _build_response(scores, res_data.get('heatmaps', {}), demo=False)
-                
+
             except Exception as e:
                 import traceback
                 traceback.print_exc()
-                print(f"❌ [DEBUG] Lỗi kết nối HF qua gradio_client: {str(e)}")
-                return jsonify({'error': f"Lỗi kết nối HF: {str(e)}"}), 503
+                print(f"❌ [DEBUG] Lỗi kết nối HF: {str(e)}")
+                return jsonify({'error': f"HF Space không phản hồi sau 2 lần thử: {str(e)}"}), 503
 
         # MODO 2: Local
         if model and HAS_TORCH:
