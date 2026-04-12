@@ -68,7 +68,7 @@ function updateFarmsList() {
         </div>
         <span class="w-3 h-3 rounded-full bg-teal-400 inline-block mt-1"></span>
       </div>
-      <h3 class="text-lg font-semibold text-slate-800 mb-2">${farm.name}</h3>
+      <h3 class="text-lg font-semibold text-slate-800 mb-2">${farm.name} <span class="text-sm font-normal text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full ml-1">ID: ${farm.id}</span></h3>
       <div class="space-y-1 mb-4 text-sm text-slate-600">
         <p>🌱 ${farm.loai_cay || 'Cây ớt'}</p>
         ${farm.dia_chi ? `<p>📍 ${farm.dia_chi}</p>` : ''}
@@ -127,7 +127,7 @@ function populateFarmSelector() {
   farms.forEach(farm => {
     const option = document.createElement('option');
     option.value = farm.id;
-    option.textContent = farm.name;
+    option.textContent = `${farm.name} (ID: ${farm.id})`;
     selector.appendChild(option);
   });
   
@@ -141,7 +141,9 @@ function changeActiveFarm(farmId) {
   const farm = farms.find(f => f.id === farmId);
   if (farm) {
     showToast(`Đã đổi sang: ${farm.name}`);
-    // Có thể thêm hàm load lại sensor data cho farmId ở đây nếu có API
+    if (window.fetchAndUpdateSensors) {
+      window.fetchAndUpdateSensors();
+    }
   }
 }
 
