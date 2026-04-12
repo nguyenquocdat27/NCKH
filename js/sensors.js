@@ -13,8 +13,6 @@ function connectESP32() {
 
 window.fetchAndUpdateSensors = async function() {
   if (!selectedFarmId) return;
-  const pageEl = document.getElementById('esp32-page');
-  if (!pageEl || pageEl.classList.contains('hidden')) return;
 
   try {
     const history = await dbGetSensorHistory(selectedFarmId, 10);

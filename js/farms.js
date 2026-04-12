@@ -105,6 +105,7 @@ function editFarm(farmId) {
     });
 
     lucide.createIcons();
+    if (window.fetchAndUpdateSensors) window.fetchAndUpdateSensors();
   }
 }
 
