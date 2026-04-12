@@ -2,10 +2,55 @@
 // SENSORS & ESP32 (js/sensors.js)
 // ============================================================
 
+let sensorPollingInterval = null;
+
 function connectESP32() {
   const url = document.getElementById('esp32-url').value;
   if (!url) { showToast('Vui lòng nhập URL ESP32'); return; }
-  showToast('Đang kết nối ESP32 và cảm biến...');
+  showToast('Đang kết nối ESP32 và tải dữ liệu...');
+  startSensorPolling();
+}
+
+window.fetchAndUpdateSensors = async function() {
+  if (!selectedFarmId) return;
+  const pageEl = document.getElementById('esp32-page');
+  if (!pageEl || pageEl.classList.contains('hidden')) return;
+
+  try {
+    const history = await dbGetSensorHistory(selectedFarmId, 10);
+    if (!history || history.length === 0) return;
+
+    // Tính trung bình 10 bản ghi gần nhất để hiển thị lên ô to
+    const validTemps = history.map(d => d.temperature).filter(v => v !== null && v !== undefined);
+    const validHums  = history.map(d => d.humidity).filter(v => v !== null && v !== undefined);
+    const validLights = history.map(d => d.light).filter(v => v !== null && v >= 0);
+
+    const avgTemp  = validTemps.length  ? validTemps.reduce((a, b) => a + b, 0)  / validTemps.length  : null;
+    const avgHum   = validHums.length   ? validHums.reduce((a, b) => a + b, 0)   / validHums.length   : null;
+    const avgLight = validLights.length ? validLights.reduce((a, b) => a + b, 0) / validLights.length : null;
+
+    const tEl = document.getElementById('esp32-temp');
+    if (tEl) tEl.textContent = avgTemp !== null ? `${avgTemp.toFixed(1)}°C` : '--';
+
+    const hEl = document.getElementById('esp32-humidity');
+    if (hEl) hEl.textContent = avgHum !== null ? `${avgHum.toFixed(1)}%` : '--';
+
+    const lEl = document.getElementById('esp32-light');
+    if (lEl) {
+      // BH1750 chưa kết nối → không có giá trị hợp lệ
+      lEl.textContent = avgLight !== null ? `${avgLight.toFixed(0)} lux` : '--';
+    }
+
+    renderSensorHistoryTable(history);
+  } catch (e) {
+    console.error("Lỗi lấy dữ liệu sensors:", e);
+  }
+}
+
+function startSensorPolling() {
+  if (sensorPollingInterval) clearInterval(sensorPollingInterval);
+  window.fetchAndUpdateSensors();
+  sensorPollingInterval = setInterval(window.fetchAndUpdateSensors, 5000);
 }
 
 async function showSensorChart(type) {
@@ -87,17 +132,21 @@ function renderSensorHistoryTable(history) {
     return;
   }
 
-  // Sắp xếp mới nhất lên đầu cho bảng
-  const sortedHistory = [...history].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  // Backend trả về oldest -> newest. Revert array để hiển thị newest lên đầu
+  const sortedHistory = [...history].reverse();
 
-  tbody.innerHTML = sortedHistory.map(d => `
+  tbody.innerHTML = sortedHistory.map(d => {
+    const lightDisplay = (d.light === null || d.light < 0)
+      ? '<span class="text-slate-400 italic">--</span>'
+      : `${d.light} lux`;
+    return `
     <tr class="hover:bg-slate-50 transition-colors">
       <td class="px-4 py-3 text-slate-600 font-medium">${d.timestamp.split(' ')[0]}</td>
       <td class="text-center font-bold text-red-600">${d.temperature}°C</td>
       <td class="text-center font-bold text-cyan-600">${d.humidity}%</td>
-      <td class="text-center font-bold text-amber-600">${d.light} lux</td>
-    </tr>
-  `).join('');
+      <td class="text-center font-bold text-amber-600">${lightDisplay}</td>
+    </tr>`;
+  }).join('');
 }
 
 function closeSensorChart() {
