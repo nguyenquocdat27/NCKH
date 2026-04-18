@@ -22,7 +22,7 @@ window.fetchAndUpdateSensors = async function() {
     const latest = history[history.length - 1];
 
     const tEl = document.getElementById('esp32-temp');
-    if (tEl) tEl.textContent = latest.temperature !== null ? `${latest.temperature.toFixed(2)}°C` : '--';
+    if (tEl) tEl.textContent = `${latest.temperature.toFixed(2)}°C`;
 
     const hEl = document.getElementById('esp32-humidity');
     if (hEl) hEl.textContent = latest.humidity !== null ? `${latest.humidity.toFixed(0)}%` : '--';
@@ -43,6 +43,11 @@ function startSensorPolling() {
   window.fetchAndUpdateSensors();
   sensorPollingInterval = setInterval(window.fetchAndUpdateSensors, 5000);
 }
+
+// Tự động khởi chạy ngay khi mở trang web (Không cần nhấn Nút kết nối ESP32)
+document.addEventListener('DOMContentLoaded', () => {
+    startSensorPolling();
+});
 
 async function showSensorChart(type) {
   const chartModal = document.getElementById('sensor-chart-modal');
