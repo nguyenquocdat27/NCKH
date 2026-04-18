@@ -18,25 +18,18 @@ window.fetchAndUpdateSensors = async function() {
     const history = await dbGetSensorHistory(selectedFarmId, 10);
     if (!history || history.length === 0) return;
 
-    // Tính trung bình 10 bản ghi gần nhất để hiển thị lên ô to
-    const validTemps = history.map(d => d.temperature).filter(v => v !== null && v !== undefined);
-    const validHums  = history.map(d => d.humidity).filter(v => v !== null && v !== undefined);
-    const validLights = history.map(d => d.light).filter(v => v !== null && v >= 0);
-
-    const avgTemp  = validTemps.length  ? validTemps.reduce((a, b) => a + b, 0)  / validTemps.length  : null;
-    const avgHum   = validHums.length   ? validHums.reduce((a, b) => a + b, 0)   / validHums.length   : null;
-    const avgLight = validLights.length ? validLights.reduce((a, b) => a + b, 0) / validLights.length : null;
+    // Backend trả về oldest -> newest. Nên lấy bản ghi cuối cùng làm giá trị hiện tại (mới nhất)
+    const latest = history[history.length - 1];
 
     const tEl = document.getElementById('esp32-temp');
-    if (tEl) tEl.textContent = avgTemp !== null ? `${avgTemp.toFixed(1)}°C` : '--';
+    if (tEl) tEl.textContent = latest.temperature !== null ? `${latest.temperature.toFixed(2)}°C` : '--';
 
     const hEl = document.getElementById('esp32-humidity');
-    if (hEl) hEl.textContent = avgHum !== null ? `${avgHum.toFixed(1)}%` : '--';
+    if (hEl) hEl.textContent = latest.humidity !== null ? `${latest.humidity.toFixed(0)}%` : '--';
 
     const lEl = document.getElementById('esp32-light');
     if (lEl) {
-      // BH1750 chưa kết nối → không có giá trị hợp lệ
-      lEl.textContent = avgLight !== null ? `${avgLight.toFixed(0)} lux` : '--';
+      lEl.textContent = (latest.light !== null && latest.light >= 0) ? `${latest.light.toFixed(0)} lux` : '--';
     }
 
     renderSensorHistoryTable(history);
