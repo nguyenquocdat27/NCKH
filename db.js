@@ -113,6 +113,42 @@ async function dbGetSensorHistory(vuonId, limit = 20) {
 
 
 // ========================================================
+// USB CAMERA & LỊCH SỬ PHÂN TÍCH AI
+// ========================================================
+
+/** Lấy cài đặt camera của 1 vườn (khoảng thời gian & lệnh chụp) */
+async function dbGetCameraSettings(vuonId) {
+  const res = await fetch(`${DB_API}/camera/settings/${vuonId}`);
+  return res.json();
+}
+
+/** Cập nhật chu kỳ chụp tự động hoặc ra lệnh chụp ngay từ server */
+async function dbUpdateCameraSettings(vuonId, data) {
+  const res = await fetch(`${DB_API}/camera/settings/${vuonId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  return res.json();
+}
+
+/** Lấy lịch sử chụp ảnh & kết quả phân tích AI của 1 vườn */
+async function dbGetCameraHistory(vuonId, limit = 20) {
+  const res = await fetch(`${DB_API}/camera/history/${vuonId}?limit=${limit}`);
+  return res.json();
+}
+
+/** Yêu cầu chụp ảnh local trực tiếp từ OpenCV camera trên Server */
+async function dbTriggerLocalCapture(vuonId, cameraIndex = 0) {
+  const res = await fetch(`${DB_API}/camera/capture_local/${vuonId}?index=${cameraIndex}`, {
+    method: 'POST'
+  });
+  return res.json();
+}
+
+
+
+// ========================================================
 // VÍ DỤ SỬ DỤNG (xóa khi deploy)
 // ========================================================
 /*

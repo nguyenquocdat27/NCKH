@@ -63,6 +63,8 @@ class Vuon(db.Model):
     loai_cay    = db.Column(db.String(100), default='Cây ớt')
     dia_chi     = db.Column(db.String(200))
     ghi_chu     = db.Column(db.Text)
+    camera_interval = db.Column(db.Integer, default=30) # Chu kỳ tự động chụp (phút), 0 là tắt
+    camera_command  = db.Column(db.String(50), default='idle') # Lệnh từ server: 'idle' hoặc 'capture'
     ngay_tao    = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Quan hệ với cảm biến
@@ -71,13 +73,15 @@ class Vuon(db.Model):
 
     def to_dict(self):
         return {
-            'id':       self.id,
-            'user_id':  self.user_id,
-            'ten_vuon': self.ten_vuon,
-            'loai_cay': self.loai_cay,
-            'dia_chi':  self.dia_chi,
-            'ghi_chu':  self.ghi_chu,
-            'ngay_tao': self.ngay_tao.strftime('%d/%m/%Y'),
+            'id':              self.id,
+            'user_id':         self.user_id,
+            'ten_vuon':        self.ten_vuon,
+            'loai_cay':        self.loai_cay,
+            'dia_chi':         self.dia_chi,
+            'ghi_chu':         self.ghi_chu,
+            'camera_interval': self.camera_interval,
+            'camera_command':  self.camera_command,
+            'ngay_tao':        self.ngay_tao.strftime('%d/%m/%Y'),
         }
 
 
@@ -101,7 +105,54 @@ class SensorData(db.Model):
             'temperature': self.temperature,
             'humidity':    self.humidity,
             'light':       self.light,
-            'timestamp':   self.timestamp.strftime('%H:%M:%S %d/%m/%Y'),
+            'timestamp':   self.timestamp.isoformat() + 'Z',
+        }
+
+
+# ========================================================
+# BẢNG LỊCH SỬ CAMERA PHÂN TÍCH AI
+# ========================================================
+class CameraAnalysis(db.Model):
+    __tablename__ = 'camera_analysis'
+
+    id              = db.Column(db.Integer, primary_key=True)
+    vuon_id         = db.Column(db.Integer, db.ForeignKey('vuons.id'), nullable=False)
+    image_data      = db.Column(db.Text, nullable=False) # Base64 string ảnh chụp
+    scores          = db.Column(db.Text) # Điểm số AI dạng chuỗi JSON
+    deficient_names = db.Column(db.Text) # Các chất bị thiếu (ví dụ: JSON list ["Canxi (Ca)"])
+    recommendations = db.Column(db.Text) # Lời khuyên tổng hợp từ AI dạng JSON list
+    healthy         = db.Column(db.Boolean, default=True)
+    timestamp       = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Thiết lập quan hệ ngược
+    vuon = db.relationship('Vuon', backref=db.backref('camera_history', lazy=True, cascade='all, delete-orphan'))
+
+    def to_dict(self):
+        import json
+        try:
+            scores_dict = json.loads(self.scores) if self.scores else {}
+        except:
+            scores_dict = {}
+
+        try:
+            deficient_list = json.loads(self.deficient_names) if self.deficient_names else []
+        except:
+            deficient_list = [self.deficient_names] if self.deficient_names else []
+
+        try:
+            recommendations_list = json.loads(self.recommendations) if self.recommendations else []
+        except:
+            recommendations_list = [self.recommendations] if self.recommendations else []
+
+        return {
+            'id':              self.id,
+            'vuon_id':         self.vuon_id,
+            'image_data':      self.image_data,
+            'scores':          scores_dict,
+            'deficient_names': deficient_list,
+            'recommendations': recommendations_list,
+            'healthy':         self.healthy,
+            'timestamp':       self.timestamp.isoformat() + 'Z',
         }
 
 
@@ -114,7 +165,7 @@ def init_db(app):
         try:
             db.create_all()
             print("✅ Database sẵn sàng!")
-            print("   Bảng: users, vuons, sensor_data")
+            print("   Bảng: users, vuons, sensor_data, camera_analysis")
         except Exception as e:
             print(f"⚠️  TiDB không phản hồi ({e}) — chuyển sang SQLite dự phòng!")
             # Fallback về SQLite nếu TiDB bị pause
@@ -129,4 +180,29 @@ def init_db(app):
                 print("✅ Database SQLite dự phòng đã sẵn sàng!")
             except Exception as e2:
                 print(f"❌ Lỗi SQLite: {e2}")
+                return
+
+        # Thực hiện di chuyển cơ sở dữ liệu tự động (Add columns) để không lỗi dữ liệu cũ
+        try:
+            # Chạy các câu lệnh SQL alter table trực tiếp
+            from sqlalchemy import text
+            with db.engine.connect() as conn:
+                # Check và thêm camera_interval
+                try:
+                    conn.execute(text("ALTER TABLE vuons ADD COLUMN camera_interval INTEGER DEFAULT 30"))
+                    conn.commit()
+                    print("⚙️  Đã thêm cột camera_interval vào bảng vuons!")
+                except Exception:
+                    pass
+
+                # Check và thêm camera_command
+                try:
+                    conn.execute(text("ALTER TABLE vuons ADD COLUMN camera_command VARCHAR(50) DEFAULT 'idle'"))
+                    conn.commit()
+                    print("⚙️  Đã thêm cột camera_command vào bảng vuons!")
+                except Exception:
+                    pass
+        except Exception as e_mig:
+            print(f"⚠️  Lỗi khi chạy migration tự động: {e_mig}")
+
 

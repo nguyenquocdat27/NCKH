@@ -27,6 +27,12 @@ function switchPage(page) {
     event.target.classList.remove('tab-inactive', 'border-transparent', 'text-slate-600');
     event.target.classList.add('tab-active', 'border-red-500', 'text-red-600');
   }
+  
+  // Khởi tạo trang camera nếu chuyển qua tab camera
+  if (page === 'camera' && window.initCameraPage) {
+    window.initCameraPage();
+  }
+
   lucide.createIcons();
 }
 

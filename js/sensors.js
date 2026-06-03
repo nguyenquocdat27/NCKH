@@ -72,7 +72,12 @@ async function showSensorChart(type) {
     try {
       const history = await dbGetSensorHistory(selectedFarmId);
       if (history && history.length > 0) {
-        labels = history.map(d => d.timestamp.split(' ')[0]); // Lấy giờ HH:mm:ss
+        labels = history.map(d => {
+          const dateObj = new Date(d.timestamp);
+          const hrs = String(dateObj.getHours()).padStart(2, '0');
+          const mins = String(dateObj.getMinutes()).padStart(2, '0');
+          return `${hrs}:${mins}`;
+        });
         data   = history.map(d => d[type]);
       }
     } catch (err) {
@@ -137,7 +142,7 @@ function renderSensorHistoryTable(history) {
       : `${d.light} lux`;
     return `
     <tr class="hover:bg-slate-50 transition-colors">
-      <td class="px-4 py-3 text-slate-600 font-medium">${d.timestamp.split(' ')[0]}</td>
+      <td class="px-4 py-3 text-slate-600 font-medium">${window.formatDateTime(d.timestamp)}</td>
       <td class="text-center font-bold text-red-600">${d.temperature}°C</td>
       <td class="text-center font-bold text-cyan-600">${d.humidity}%</td>
       <td class="text-center font-bold text-amber-600">${lightDisplay}</td>

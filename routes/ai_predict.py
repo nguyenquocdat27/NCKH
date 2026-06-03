@@ -109,81 +109,73 @@ def load_model():
             print(f"✅ Local Model Loaded: {DEVICE}")
     except Exception as e: print(f"❌ Error loading model: {e}")
 
-@ai_bp.route('/predict', methods=['POST'])
-def predict():
-    try:
-        data = request.get_json()
-        print("🔗 [DEBUG] Nhận yêu cầu /predict")
-        
-        if not data or 'image' not in data:
-            print("❌ [DEBUG] Thiếu ảnh trong request")
-            return jsonify({'error': 'Thiếu ảnh'}), 400
+def perform_prediction(image_base64):
+    """Thực hiện dự đoán AI (Hugging Face / Local / Demo) và trả về Dict kết quả"""
+    # MODO 1: Hugging Face (dùng client được cache)
+    if HF_API_URL:
+        print(f"📡 [DEBUG] Đang gửi yêu cầu tới HF: {HF_API_URL}")
+        try:
+            from gradio_client import handle_file
+            import tempfile
 
-        # MODO 1: Hugging Face (dùng client được cache)
-        if HF_API_URL:
-            print(f"📡 [DEBUG] Đang gửi yêu cầu tới HF: {HF_API_URL}")
-            try:
-                from gradio_client import handle_file
-                import tempfile
+            img_data = image_base64
+            if ',' in img_data:
+                img_data = img_data.split(',')[1]
 
-                img_data = data['image']
-                if ',' in img_data:
-                    img_data = img_data.split(',')[1]
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp:
+                tmp.write(base64.b64decode(img_data))
+                tmp_file_path = tmp.name
 
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as tmp:
-                    tmp.write(base64.b64decode(img_data))
-                    tmp_file_path = tmp.name
-
-                # Thử tối đa 2 lần (HF Space có thể đang cold-start)
-                last_error = None
-                for attempt in range(2):
-                    try:
-                        global _hf_client
-                        client = _get_hf_client()
-                        if client is None:
-                            raise Exception("Không thể kết nối HF Space")
-                        print(f"📡 [DEBUG] Attempt {attempt+1}: Đang gọi client.predict...")
-                        res_data = client.predict(
-                            image_input=handle_file(tmp_file_path),
-                            api_name="/predict"
-                        )
-                        break  # Thành công → thoát vòng lặp
-                    except Exception as e:
-                        last_error = e
-                        print(f"⚠️ Attempt {attempt+1} thất bại: {e} — reset client...")
-                        _hf_client = None  # Reset để lần sau tạo lại
-                else:
-                    raise last_error  # Cả 2 lần đều thất bại
-
+            # Thử tối đa 2 lần (HF Space có thể đang cold-start)
+            last_error = None
+            for attempt in range(2):
                 try:
-                    os.remove(tmp_file_path)
-                except:
-                    pass
+                    global _hf_client
+                    client = _get_hf_client()
+                    if client is None:
+                        raise Exception("Không thể kết nối HF Space")
+                    print(f"📡 [DEBUG] Attempt {attempt+1}: Đang gọi client.predict...")
+                    res_data = client.predict(
+                        image_input=handle_file(tmp_file_path),
+                        api_name="/predict"
+                    )
+                    break  # Thành công → thoát vòng lặp
+                except Exception as e:
+                    last_error = e
+                    print(f"⚠️ Attempt {attempt+1} thất bại: {e} — reset client...")
+                    _hf_client = None  # Reset để lần sau tạo lại
+            else:
+                raise last_error  # Cả 2 lần đều thất bại
 
-                print(f"📝 [DEBUG] HF Processed: {str(res_data)[:200]}...")
+            try:
+                os.remove(tmp_file_path)
+            except:
+                pass
 
-                if isinstance(res_data, str):
-                    import json
-                    res_data = json.loads(res_data)
+            print(f"📝 [DEBUG] HF Processed: {str(res_data)[:200]}...")
 
-                scores = res_data.get('scores', {})
-                if not scores and isinstance(res_data, list):
-                    scores = {item[0]: item[1] for item in res_data}
+            if isinstance(res_data, str):
+                import json
+                res_data = json.loads(res_data)
 
-                return _build_response(scores, res_data.get('heatmaps', {}), demo=False)
+            scores = res_data.get('scores', {})
+            if not scores and isinstance(res_data, list):
+                scores = {item[0]: item[1] for item in res_data}
 
-            except Exception as e:
-                import traceback
-                traceback.print_exc()
-                print(f"❌ [DEBUG] Lỗi kết nối HF: {str(e)}")
-                return jsonify({'error': f"HF Space không phản hồi sau 2 lần thử: {str(e)}"}), 503
+            return _build_response(scores, res_data.get('heatmaps', {}), demo=False)
 
-        # MODO 2: Local
-        if model and HAS_TORCH:
+        except Exception as e:
+            print(f"❌ [DEBUG] Lỗi kết nối HF Space: {str(e)}")
+            print("⚠️  Tự động chuyển sang chế độ dự phòng (Local hoặc Demo)...")
+            # Không raise lỗi mà tự động trôi xuống chạy Local / Demo!
+
+    # MODO 2: Local
+    if model and HAS_TORCH:
+        try:
             print("🏠 [DEBUG] Đang chạy Local AI")
             from PIL import Image
             import io
-            img_data = base64.b64decode(data['image'].split(',')[1] if ',' in data['image'] else data['image'])
+            img_data = base64.b64decode(image_base64.split(',')[1] if ',' in image_base64 else image_base64)
             orig_img = Image.open(io.BytesIO(img_data)).convert('RGB')
             
             transform = transforms.Compose([
@@ -197,12 +189,28 @@ def predict():
             
             scores = {NUTRIENTS[i]: round(probs[i], 4) for i in range(N_CLASSES)}
             return _build_response(scores, {}, demo=False)
+        except Exception as ex_local:
+            print(f"❌ Lỗi chạy Local AI: {ex_local}. Chuyển sang Demo...")
 
-        # MODO 3: Demo
-        print("💡 [DEBUG] Đang chạy chế độ DEMO")
-        import random
-        scores = {n: round(random.uniform(0.05, 0.95), 3) for n in NUTRIENTS}
-        return _build_response(scores, {}, demo=True)
+    # MODO 3: Demo
+    print("💡 [DEBUG] Đang chạy chế độ DEMO")
+    import random
+    scores = {n: round(random.uniform(0.05, 0.95), 3) for n in NUTRIENTS}
+    return _build_response(scores, {}, demo=True)
+
+
+@ai_bp.route('/predict', methods=['POST'])
+def predict():
+    try:
+        data = request.get_json()
+        print("🔗 [DEBUG] Nhận yêu cầu /predict")
+        
+        if not data or 'image' not in data:
+            print("❌ [DEBUG] Thiếu ảnh trong request")
+            return jsonify({'error': 'Thiếu ảnh'}), 400
+
+        result = perform_prediction(data['image'])
+        return jsonify(result)
 
     except Exception as e:
         import traceback
@@ -240,7 +248,7 @@ def _build_response(scores, heatmaps, demo):
         for d in detail:
             recs.append(f"{d['severity_icon']} **{d['name']} ({d['severity']})**: {d['recommendation']}")
 
-    return jsonify({
+    return {
         'healthy': healthy,
         'deficient_detail': detail,
         'deficient_names': [NUTRIENT_NAMES.get(n, n) for n in deficient],
@@ -248,7 +256,8 @@ def _build_response(scores, heatmaps, demo):
         'recommendations': recs,
         'demo_mode': demo,
         'threshold': THRESHOLD
-    })
+    }
+
 
 @ai_bp.route('/status')
 def status():

@@ -1,16 +1,282 @@
-      <!-- Camera -->
-      <div id="camera-page" class="page-content hidden">
-        <div class="flex items-center gap-3 mb-6">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center"><i data-lucide="video" class="w-5 h-5 text-white"></i></div>
-          <div><h2 class="text-2xl font-bold text-slate-800">Camera</h2><p class="text-sm text-slate-500">Luồng camera ESP32 Cam</p></div>
-        </div>
-        <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-          <div class="mb-4 bg-slate-900 rounded-xl overflow-hidden">
-            <img id="camera-stream" class="camera-stream w-full" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='480'%3E%3Crect fill='%23222' width='640' height='480'/%3E%3Ctext x='320' y='240' text-anchor='middle' dy='.3em' fill='%23888' font-size='24' font-family='monospace'%3ECamera Stream từ ESP32 Cam%3C/text%3E%3C/svg%3E" alt="Camera stream">
+<!-- Camera Page -->
+<div id="camera-page" class="page-content hidden">
+  <!-- Header -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+    <div class="flex items-center gap-3">
+      <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center shadow-lg shadow-pink-500/20">
+        <i data-lucide="video" class="w-6 h-6 text-white animate-pulse"></i>
+      </div>
+      <div>
+        <h2 class="text-2xl font-bold text-slate-800">Giám sát USB Camera</h2>
+        <p class="text-sm text-slate-500">Tự động chụp ảnh lá cây theo chu kỳ & phân tích AI tức thì</p>
+      </div>
+    </div>
+    
+    <!-- Quick Selector -->
+    <div class="bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm flex items-center gap-2">
+      <span class="text-xs font-semibold text-slate-500 uppercase">Vườn hiện tại:</span>
+      <select id="camera-farm-selector" onchange="changeCameraFarm(this.value)" class="text-sm font-semibold text-slate-800 focus:outline-none bg-transparent cursor-pointer">
+        <option value="">-- Chọn vườn --</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Warning when no farm selected -->
+  <div id="camera-no-farm-warning" class="bg-amber-50 border border-amber-200 text-amber-800 rounded-2xl p-8 text-center shadow-sm">
+    <div class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+      <i data-lucide="alert-triangle" class="w-8 h-8 text-amber-600"></i>
+    </div>
+    <h3 class="text-lg font-bold mb-2">Chưa chọn Vườn Giám sát</h3>
+    <p class="text-sm text-amber-700 max-w-md mx-auto mb-4">
+      Vui lòng chọn một nhà vườn ở menu phía trên hoặc tạo vườn mới trong mục "Vườn của tôi" để bắt đầu kết nối USB Camera và theo dõi sức khỏe cây ớt.
+    </p>
+  </div>
+
+  <!-- Main Grid when farm selected -->
+  <div id="camera-main-content" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-6">
+    
+    <!-- LEFT SIDEBAR: Cấu hình và Điều khiển (4 cols) -->
+    <div class="lg:col-span-4 space-y-6">
+      
+      <!-- Box 1: Trạng thái kết nối & Thông tin -->
+      <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
+        <h3 class="text-base font-bold text-slate-800 flex items-center gap-2 pb-2 border-b border-slate-100">
+          <i data-lucide="activity" class="w-5 h-5 text-emerald-500"></i> Trạng thái Thiết bị
+        </h3>
+        
+        <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+          <span class="text-sm text-slate-600 font-medium">Trạng thái Client:</span>
+          <div class="flex items-center gap-2">
+            <span id="camera-ping-indicator" class="relative flex h-3 w-3">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-slate-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-3 w-3 bg-slate-500"></span>
+            </span>
+            <span id="camera-ping-status" class="text-sm font-bold text-slate-500">Ngoại tuyến</span>
           </div>
-          <div class="space-y-3">
-            <div class="p-4 bg-slate-50 rounded-xl"><label class="block text-sm font-medium text-slate-700 mb-2">URL Camera ESP32 Cam</label><input type="text" id="camera-url" placeholder="http://192.168.1.100:8080/stream" class="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500" value="http://esp32-camera.local:8080/stream"></div>
-            <button onclick="connectCamera()" class="w-full px-4 py-2.5 bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white rounded-xl font-medium transition-all flex items-center justify-center gap-2"><i data-lucide="wifi" class="w-5 h-5"></i> Kết nối Camera</button>
+        </div>
+
+        <div class="text-xs text-slate-400 space-y-1">
+          <p>📍 Để kết nối: Hãy chạy script <code class="font-mono bg-slate-100 px-1 rounded text-slate-600">usb_camera_scanner.py</code> trên Raspberry Pi hoặc Máy tính của bạn.</p>
+          <p id="camera-last-seen-text">🕒 Lần cuối thấy: Chưa có tín hiệu</p>
+        </div>
+      </div>
+
+      <!-- Box 2: Cấu hình lịch chụp tự động -->
+      <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
+        <h3 class="text-base font-bold text-slate-800 flex items-center gap-2 pb-2 border-b border-slate-100">
+          <i data-lucide="calendar" class="w-5 h-5 text-indigo-500"></i> Lịch chụp & Phân tích
+        </h3>
+
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-500 uppercase mb-2">Chu kỳ tự động chụp:</label>
+            <select id="camera-schedule-interval" class="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 text-sm font-medium">
+              <option value="0">❌ Tắt chụp tự động</option>
+              <option value="1">⏱️ Mỗi 1 phút (Để test nhanh)</option>
+              <option value="5">⏱️ Mỗi 5 phút</option>
+              <option value="15">⏱️ Mỗi 15 phút</option>
+              <option value="30" selected>⏱️ Mỗi 30 phút</option>
+              <option value="60">⏱️ Mỗi 1 giờ</option>
+              <option value="120">⏱️ Mỗi 2 giờ</option>
+            </select>
+          </div>
+
+          <button onclick="saveCameraSchedule()" class="w-full px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 shadow-sm">
+            <i data-lucide="save" class="w-4 h-4"></i> Lưu cấu hình chu kỳ
+          </button>
+        </div>
+      </div>
+
+      <!-- Box 3: Điều khiển chụp lập tức -->
+      <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
+        <h3 class="text-base font-bold text-slate-800 flex items-center gap-2 pb-2 border-b border-slate-100">
+          <i data-lucide="zap" class="w-5 h-5 text-rose-500"></i> Kích hoạt chụp lập tức
+        </h3>
+
+        <div class="space-y-3">
+          <!-- Remote trigger -->
+          <div>
+            <p class="text-xs text-slate-400 mb-2">Gửi lệnh chụp xuống Client (Raspberry Pi/PC cắm USB camera rời) từ xa qua mạng internet:</p>
+            <button onclick="triggerRemoteCapture()" id="remote-capture-btn" class="w-full px-4 py-3 bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700 text-white rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-md shadow-rose-500/10">
+              <i data-lucide="send" class="w-4 h-4"></i> Yêu cầu chụp từ Server
+            </button>
+          </div>
+
+          <div class="relative flex py-2 items-center">
+            <div class="flex-grow border-t border-slate-100"></div>
+            <span class="flex-shrink mx-4 text-xs font-semibold text-slate-400 uppercase">Hoặc Chạy Local</span>
+            <div class="flex-grow border-t border-slate-100"></div>
+          </div>
+
+          <!-- Local trigger -->
+          <div class="p-3 bg-slate-50 border border-slate-150 rounded-xl space-y-2">
+            <p class="text-[11px] text-slate-500">Nếu bạn chạy Flask Server trực tiếp trên PC có cắm USB Camera, bạn có thể kích hoạt trực tiếp từ Server:</p>
+            
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-slate-600 font-medium whitespace-nowrap">Camera Index:</span>
+              <select id="local-camera-index" class="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs focus:outline-none">
+                <option value="0">0 (Webcam mặc định)</option>
+                <option value="1">1 (Camera USB rời)</option>
+                <option value="2">2</option>
+              </select>
+            </div>
+
+            <button onclick="triggerLocalCapture()" id="local-capture-btn" class="w-full px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5">
+              <i data-lucide="video" class="w-3.5 h-3.5"></i> Chụp trực tiếp bằng Server
+            </button>
           </div>
         </div>
       </div>
+      
+    </div>
+
+    <!-- RIGHT PANEL: Ảnh mới nhất & Kết quả phân tích AI (8 cols) -->
+    <div class="lg:col-span-8 space-y-6">
+      
+      <!-- Khung hiển thị ảnh mới chụp -->
+      <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+          <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+            <i data-lucide="image" class="w-5 h-5 text-pink-500"></i> Ảnh chụp mới nhất của Vườn
+          </h3>
+          <span id="camera-latest-time" class="text-xs font-semibold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-full">Chưa có ảnh chụp</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+          <!-- Ảnh (7 cols) -->
+          <div class="md:col-span-7 bg-slate-900 rounded-xl aspect-[4/3] overflow-hidden flex items-center justify-center border border-slate-800 relative group">
+            <img id="camera-latest-image" class="w-full h-full object-cover" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='480'%3E%3Crect fill='%231e293b' width='640' height='480'/%3E%3Ctext x='320' y='240' text-anchor='middle' dy='.3em' fill='%2364748b' font-size='16' font-family='sans-serif'%3EChưa có dữ liệu ảnh chụp từ USB Camera%3C/text%3E%3C/svg%3E" alt="Latest camera output">
+            
+            <!-- Zoom overlay -->
+            <div id="camera-latest-zoom" class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer" onclick="viewLatestFullImage()">
+              <div class="bg-white/20 backdrop-blur-md p-3 rounded-full text-white shadow-lg">
+                <i data-lucide="maximize-2" class="w-6 h-6"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Kết quả AI nhanh (5 cols) -->
+          <div id="camera-latest-ai-box" class="md:col-span-5 flex flex-col justify-between space-y-4">
+            <div class="space-y-3">
+              <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Chẩn đoán nhanh từ AI</span>
+              
+              <!-- Indicator status -->
+              <div id="camera-latest-ai-status" class="p-4 bg-slate-50 rounded-xl border border-slate-100 flex items-center gap-3">
+                <span class="text-3xl">🌿</span>
+                <div>
+                  <p class="font-bold text-slate-700">Chưa có kết quả</p>
+                  <p class="text-xs text-slate-400">Hãy thực hiện chụp ảnh trước</p>
+                </div>
+              </div>
+
+              <!-- Mini scores / deficiencies -->
+              <div id="camera-latest-ai-details" class="space-y-2 hidden">
+                <p class="text-xs font-semibold text-slate-500 uppercase">Mức độ thiếu hụt:</p>
+                <div id="camera-latest-ai-bars" class="space-y-1.5 max-h-[160px] overflow-y-auto pr-1">
+                  <!-- Bars go here -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Detailed recommendation button -->
+            <button id="camera-view-recs-btn" onclick="openCameraDetailsModal()" class="w-full px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 hidden">
+              <i data-lucide="sparkles" class="w-4 h-4 text-violet-500 animate-spin"></i> Xem chẩn đoán & Khuyến nghị chi tiết
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- BOTTOM ROW: Thư viện Lịch sử Chụp & Phân tích AI (12 cols) -->
+    <div class="lg:col-span-12">
+      <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
+        <h3 class="text-base font-bold text-slate-800 flex items-center gap-2 pb-2 border-b border-slate-100">
+          <i data-lucide="history" class="w-5 h-5 text-indigo-500"></i> Thư viện Lịch sử chụp ảnh AI
+        </h3>
+
+        <!-- Grid Gallery -->
+        <div id="camera-history-gallery" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          <!-- Items will be injected here -->
+        </div>
+
+        <!-- Empty state gallery -->
+        <div id="camera-history-empty" class="hidden text-center py-10 border-2 border-dashed border-slate-100 rounded-2xl">
+          <div class="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-2">
+            <i data-lucide="folder-open" class="w-6 h-6 text-slate-300"></i>
+          </div>
+          <p class="text-sm font-semibold text-slate-500">Chưa có lịch sử chụp ảnh</p>
+          <p class="text-xs text-slate-400 mt-1">Các bức ảnh được chụp tự động hoặc thủ công sẽ xuất hiện ở đây.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- CAMERA ANALYSIS DETAILS MODAL -->
+<div id="camera-details-modal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm opacity-0 pointer-events-none transition-all duration-300">
+  <div class="modal-container w-[90%] max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] scale-95 transition-transform duration-300">
+    
+    <!-- Modal Header -->
+    <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-pink-50 to-rose-50">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-pink-500 flex items-center justify-center shadow-md">
+          <i data-lucide="sparkles" class="w-5 h-5 text-white"></i>
+        </div>
+        <div>
+          <h3 class="font-bold text-lg text-slate-800">Kết quả Chẩn đoán chi tiết từ AI</h3>
+          <p id="modal-analysis-time" class="text-xs text-slate-500">Chụp lúc: --:-- --/--/----</p>
+        </div>
+      </div>
+      <button onclick="closeCameraDetailsModal()" class="p-2 hover:bg-white rounded-lg transition-colors shadow-sm"><i data-lucide="x" class="w-5 h-5 text-slate-600"></i></button>
+    </div>
+
+    <!-- Modal Content (Scrollable) -->
+    <div class="flex-1 overflow-y-auto p-6 space-y-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- Left: Image captured -->
+        <div class="space-y-3">
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Hình ảnh chiếc lá đã chụp</span>
+          <div class="bg-slate-950 rounded-2xl overflow-hidden aspect-[4/3] flex items-center justify-center border border-slate-200">
+            <img id="modal-analysis-image" class="w-full h-full object-cover" src="" alt="Captured Chilli leaf">
+          </div>
+        </div>
+
+        <!-- Right: AI diagnosis details & charts -->
+        <div class="space-y-4">
+          <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Kết luận của Mô hình AI</span>
+          
+          <div id="modal-ai-status" class="p-4 rounded-2xl border flex items-center gap-3">
+            <!-- Icon and title goes here -->
+          </div>
+
+          <div class="space-y-2">
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Độ thiếu hụt chi tiết (ngưỡng 50%)</p>
+            <div id="modal-ai-bars" class="space-y-2 p-3 bg-slate-50 rounded-2xl border border-slate-100">
+              <!-- Bars go here -->
+            </div>
+          </div>
+        </div>
+        
+      </div>
+
+      <!-- Recommendations / Treatments -->
+      <div class="space-y-3 border-t border-slate-100 pt-6">
+        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block">Khuyến nghị điều trị từ chuyên gia AI</span>
+        <div id="modal-ai-recs" class="space-y-2.5">
+          <!-- Advice list -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end">
+      <button onclick="closeCameraDetailsModal()" class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-sm transition-all shadow-sm">
+        Đóng
+      </button>
+    </div>
+
+  </div>
+</div>

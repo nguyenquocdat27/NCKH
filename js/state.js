@@ -26,3 +26,25 @@ const BACKEND_URL = ''; // Để rỗng nếu backend cùng host với frontend
 
 // URL phục vụ AI
 const AI_URL = ''; // Để rỗng nếu backend cùng host
+
+// Hàm helper dùng chung để định dạng chuỗi thời gian ISO UTC sang giờ địa phương của trình duyệt
+window.formatDateTime = function(isoString) {
+  if (!isoString) return '';
+  try {
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) return isoString;
+    
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const seconds = String(d.getSeconds()).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    
+    return `${hours}:${minutes}:${seconds} ${day}/${month}/${year}`;
+  } catch (e) {
+    console.error("Lỗi format thời gian:", e);
+    return isoString;
+  }
+};
+

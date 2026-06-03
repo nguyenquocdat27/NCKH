@@ -15,6 +15,7 @@ from routes.users import users_bp
 from routes.farms import farms_bp
 from routes.ai_predict import ai_bp, load_model
 from routes.sensors import sensors_bp
+from routes.camera import camera_bp
 
 app = Flask(__name__, static_folder='.', template_folder='.')
 CORS(app)
@@ -40,6 +41,8 @@ app.register_blueprint(users_bp, url_prefix='/api')
 app.register_blueprint(farms_bp, url_prefix='/api')
 app.register_blueprint(ai_bp,    url_prefix='/api')
 app.register_blueprint(sensors_bp, url_prefix='/api')
+app.register_blueprint(camera_bp,  url_prefix='/api')
+
 
 # ========================================================
 # ROUTES STATIC FILES VÀ TRANG CHỦ
