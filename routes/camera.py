@@ -212,7 +212,11 @@ def capture_local(vuon_id):
             'ai_result': ai_result
         }), 201
 
-
+    except ImportError:
+        return jsonify({'error': 'Thiếu thư viện opencv-python (cv2) trên máy chủ!'}), 500
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
 @camera_bp.route('/camera/history/<int:vuon_id>/<int:record_id>', methods=['DELETE'])
 def delete_camera_history(vuon_id, record_id):
