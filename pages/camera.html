@@ -104,25 +104,16 @@
 
           <div class="relative flex py-2 items-center">
             <div class="flex-grow border-t border-slate-100"></div>
-            <span class="flex-shrink mx-4 text-xs font-semibold text-slate-400 uppercase">Hoặc Chạy Local</span>
+            <span class="flex-shrink mx-4 text-xs font-semibold text-slate-400 uppercase">Hoặc từ Thiết bị này</span>
             <div class="flex-grow border-t border-slate-100"></div>
           </div>
 
-          <!-- Local trigger -->
-          <div class="p-3 bg-slate-50 border border-slate-150 rounded-xl space-y-2">
-            <p class="text-[11px] text-slate-500">Nếu bạn chạy Flask Server trực tiếp trên PC có cắm USB Camera, bạn có thể kích hoạt trực tiếp từ Server:</p>
-            
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-slate-600 font-medium whitespace-nowrap">Camera Index:</span>
-              <select id="local-camera-index" class="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs focus:outline-none">
-                <option value="0">0 (Webcam mặc định)</option>
-                <option value="1">1 (Camera USB rời)</option>
-                <option value="2">2</option>
-              </select>
-            </div>
+          <!-- Browser Camera trigger -->
+          <div class="p-3 bg-gradient-to-br from-violet-50 to-indigo-50 border border-violet-200/50 rounded-xl space-y-2">
+            <p class="text-[11px] text-slate-500">Mở Camera ngay trên trình duyệt của thiết bị đang dùng (Điện thoại, Laptop, Tablet...) để chụp ảnh lá cây và phân tích AI tức thì:</p>
 
-            <button onclick="triggerLocalCapture()" id="local-capture-btn" class="w-full px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg font-bold text-xs transition-all flex items-center justify-center gap-1.5">
-              <i data-lucide="video" class="w-3.5 h-3.5"></i> Chụp trực tiếp bằng Server
+            <button onclick="openBrowserCamera()" id="browser-camera-btn" class="w-full px-3 py-2.5 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 shadow-md shadow-violet-500/20">
+              <i data-lucide="smartphone" class="w-4 h-4"></i> Chụp bằng Camera thiết bị này
             </button>
           </div>
         </div>
@@ -191,9 +182,14 @@
     <!-- BOTTOM ROW: Thư viện Lịch sử Chụp & Phân tích AI (12 cols) -->
     <div class="lg:col-span-12">
       <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
-        <h3 class="text-base font-bold text-slate-800 flex items-center gap-2 pb-2 border-b border-slate-100">
-          <i data-lucide="history" class="w-5 h-5 text-indigo-500"></i> Thư viện Lịch sử chụp ảnh AI
-        </h3>
+        <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+          <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+            <i data-lucide="history" class="w-5 h-5 text-indigo-500"></i> Thư viện Lịch sử chụp ảnh AI
+          </h3>
+          <button onclick="cleanupCameraHistory()" class="text-xs font-semibold text-rose-500 bg-rose-50 hover:bg-rose-100 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Xóa tất cả ảnh cũ
+          </button>
+        </div>
 
         <!-- Grid Gallery -->
         <div id="camera-history-gallery" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -272,11 +268,69 @@
     </div>
 
     <!-- Modal Footer -->
-    <div class="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end">
+    <div class="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-between items-center">
+      <button id="modal-delete-btn" class="px-4 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-xl font-bold text-sm transition-all flex items-center gap-1.5 border border-rose-100">
+        <i data-lucide="trash-2" class="w-4 h-4"></i> Xóa ảnh này
+      </button>
       <button onclick="closeCameraDetailsModal()" class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-sm transition-all shadow-sm">
         Đóng
       </button>
     </div>
 
   </div>
+</div>
+
+
+<!-- BROWSER CAMERA MODAL (Full-screen overlay — hoạt động trên mọi thiết bị) -->
+<div id="browser-camera-modal" class="fixed inset-0 z-[60] flex flex-col bg-black/95 opacity-0 pointer-events-none transition-all duration-300">
+  
+  <!-- Top bar -->
+  <div class="flex items-center justify-between px-4 py-3 bg-slate-900/80 backdrop-blur-sm shrink-0">
+    <div class="flex items-center gap-2.5">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-lg">
+        <i data-lucide="camera" class="w-4.5 h-4.5 text-white"></i>
+      </div>
+      <div>
+        <h3 class="font-bold text-white text-sm">Chụp ảnh từ thiết bị</h3>
+        <p class="text-[10px] text-slate-400">Hướng camera vào lá cây ớt cần phân tích</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <select id="browser-camera-facing" onchange="switchBrowserCamera()" class="bg-slate-800 text-white border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-violet-500 cursor-pointer">
+        <option value="environment">📷 Camera sau</option>
+        <option value="user">🤳 Camera trước</option>
+      </select>
+      <button onclick="closeBrowserCamera()" class="p-2 hover:bg-slate-800 rounded-lg transition-colors" title="Đóng">
+        <i data-lucide="x" class="w-5 h-5 text-slate-400"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Video area -->
+  <div class="flex-1 relative flex items-center justify-center overflow-hidden bg-black">
+    <video id="browser-camera-video" autoplay playsinline muted class="max-w-full max-h-full object-contain"></video>
+
+    <!-- Captured preview (ẩn mặc định) -->
+    <img id="browser-camera-captured" class="hidden max-w-full max-h-full object-contain" alt="Captured">
+
+    <!-- Crosshair guide -->
+    <div id="browser-camera-guide" class="absolute inset-0 pointer-events-none flex items-center justify-center">
+      <div class="w-52 h-52 border-2 border-white/20 rounded-3xl"></div>
+    </div>
+
+    <!-- Loading overlay -->
+    <div id="browser-camera-loading" class="hidden absolute inset-0 bg-black/70 flex flex-col items-center justify-center gap-3">
+      <div class="w-12 h-12 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
+      <p class="text-white text-sm font-bold">Đang phân tích ảnh bằng AI...</p>
+      <p class="text-white/60 text-xs">Vui lòng đợi vài giây</p>
+    </div>
+  </div>
+
+  <!-- Bottom controls -->
+  <div id="browser-camera-controls" class="px-6 py-5 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center gap-6 shrink-0">
+    <button id="browser-capture-btn" onclick="captureBrowserPhoto()" class="w-[72px] h-[72px] bg-white rounded-full flex items-center justify-center shadow-xl hover:scale-105 active:scale-90 transition-transform ring-4 ring-white/30">
+      <div class="w-[60px] h-[60px] rounded-full border-[3px] border-slate-200 bg-white"></div>
+    </button>
+  </div>
+
 </div>

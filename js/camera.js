@@ -239,6 +239,152 @@ window.triggerLocalCapture = async function() {
   }
 };
 
+// ============================================================
+// BROWSER CAMERA — Chụp ảnh từ Camera trình duyệt (mọi thiết bị)
+// ============================================================
+
+let browserCameraStream = null;
+
+window.openBrowserCamera = async function() {
+  if (!selectedFarmId) {
+    showToast("⚠️ Vui lòng chọn vườn trước khi chụp ảnh!");
+    return;
+  }
+
+  const modal = document.getElementById('browser-camera-modal');
+  const video = document.getElementById('browser-camera-video');
+  const captured = document.getElementById('browser-camera-captured');
+  const loading = document.getElementById('browser-camera-loading');
+  const guide = document.getElementById('browser-camera-guide');
+  const captureBtn = document.getElementById('browser-capture-btn');
+
+  if (!modal || !video) return;
+
+  // Reset UI
+  video.classList.remove('hidden');
+  if (captured) captured.classList.add('hidden');
+  if (loading) loading.classList.add('hidden');
+  if (guide) guide.classList.remove('hidden');
+  if (captureBtn) {
+    captureBtn.disabled = false;
+    captureBtn.classList.remove('hidden');
+    captureBtn.onclick = captureBrowserPhoto;
+  }
+
+  // Get camera preference
+  const facingSelect = document.getElementById('browser-camera-facing');
+  const facingMode = facingSelect ? facingSelect.value : 'environment';
+
+  try {
+    // Stop existing stream if any
+    if (browserCameraStream) {
+      browserCameraStream.getTracks().forEach(t => t.stop());
+    }
+
+    browserCameraStream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: facingMode,
+        width: { ideal: 1920 },
+        height: { ideal: 1080 }
+      }
+    });
+
+    video.srcObject = browserCameraStream;
+
+    // Show modal with animation
+    modal.classList.remove('opacity-0', 'pointer-events-none');
+
+    lucide.createIcons();
+
+  } catch (err) {
+    console.error("Browser camera error:", err);
+    if (err.name === 'NotAllowedError') {
+      showToast("❌ Bạn cần cấp quyền truy cập Camera trong trình duyệt!");
+    } else if (err.name === 'NotFoundError') {
+      showToast("❌ Không tìm thấy Camera trên thiết bị này!");
+    } else {
+      showToast(`❌ Không thể truy cập Camera: ${err.message}`);
+    }
+    closeBrowserCamera();
+  }
+};
+
+window.switchBrowserCamera = function() {
+  // Re-open camera with the newly selected facing mode
+  openBrowserCamera();
+};
+
+window.captureBrowserPhoto = async function() {
+  if (!browserCameraStream || !selectedFarmId) return;
+
+  const video = document.getElementById('browser-camera-video');
+  const captured = document.getElementById('browser-camera-captured');
+  const loading = document.getElementById('browser-camera-loading');
+  const guide = document.getElementById('browser-camera-guide');
+  const captureBtn = document.getElementById('browser-capture-btn');
+
+  // Capture frame from video to canvas
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0);
+
+  const base64Image = canvas.toDataURL('image/jpeg', 0.85);
+
+  // Stop camera stream to save battery/resources
+  browserCameraStream.getTracks().forEach(t => t.stop());
+  browserCameraStream = null;
+
+  // Show captured preview + loading
+  video.classList.add('hidden');
+  if (captured) { captured.src = base64Image; captured.classList.remove('hidden'); }
+  if (guide) guide.classList.add('hidden');
+  if (captureBtn) captureBtn.classList.add('hidden');
+  if (loading) loading.classList.remove('hidden');
+
+  // Upload to server for AI analysis
+  try {
+    const res = await dbUploadCameraImage(selectedFarmId, base64Image);
+
+    if (res.error) throw new Error(res.error);
+
+    showToast("✅ Phân tích AI thành công! Kết quả đã lưu vào lịch sử.");
+
+    // Refresh the camera page data
+    loadCameraHistory(selectedFarmId);
+    loadCameraSettings(selectedFarmId);
+
+    // Close modal after brief delay so user sees the success
+    setTimeout(() => closeBrowserCamera(), 600);
+
+  } catch (err) {
+    showToast(`❌ Lỗi phân tích: ${err.message}`);
+    if (loading) loading.classList.add('hidden');
+
+    // Show capture button as "Chụp lại" (retake) button
+    if (captureBtn) {
+      captureBtn.classList.remove('hidden');
+      captureBtn.onclick = () => openBrowserCamera();
+    }
+  }
+};
+
+window.closeBrowserCamera = function() {
+  // Release camera hardware
+  if (browserCameraStream) {
+    browserCameraStream.getTracks().forEach(t => t.stop());
+    browserCameraStream = null;
+  }
+
+  const modal = document.getElementById('browser-camera-modal');
+  const video = document.getElementById('browser-camera-video');
+
+  if (video) video.srcObject = null;
+  if (modal) modal.classList.add('opacity-0', 'pointer-events-none');
+};
+
+
 // Tải lịch sử chụp ảnh & AI phân tích
 async function loadCameraHistory(farmId) {
   if (!farmId) return;
@@ -436,8 +582,14 @@ function openCameraDetailsModalWithData(record) {
   const modalStatus = document.getElementById('modal-ai-status');
   const modalBars = document.getElementById('modal-ai-bars');
   const modalRecs = document.getElementById('modal-ai-recs');
+  const deleteBtn = document.getElementById('modal-delete-btn');
   
   if (!modal) return;
+  
+  if (deleteBtn) {
+    deleteBtn.onclick = () => deleteHistoryRecord(record.id);
+  }
+
   
   // Điền dữ liệu cơ bản
   if (modalImage) modalImage.src = record.image_data;
@@ -532,6 +684,40 @@ window.closeCameraDetailsModal = function() {
   if (modal) {
     modal.classList.add('pointer-events-none', 'opacity-0');
     modal.querySelector('.modal-container').classList.add('scale-95');
+  }
+};
+
+// Xóa 1 ảnh trong lịch sử
+window.deleteHistoryRecord = async function(recordId) {
+  if (!confirm("Bạn có chắc chắn muốn xóa ảnh phân tích này?")) return;
+  
+  try {
+    showToast("⌛ Đang xóa ảnh...");
+    const res = await dbDeleteCameraHistory(selectedFarmId, recordId);
+    if (res.error) throw new Error(res.error);
+    
+    showToast("✅ Đã xóa ảnh thành công!");
+    closeCameraDetailsModal();
+    loadCameraHistory(selectedFarmId);
+  } catch (err) {
+    showToast(`❌ Không thể xóa: ${err.message}`);
+  }
+};
+
+// Xóa tất cả ảnh trong lịch sử
+window.cleanupCameraHistory = async function() {
+  if (!selectedFarmId) return;
+  if (!confirm("⚠️ NGUY HIỂM: Bạn có chắc chắn muốn xóa TẤT CẢ ảnh lịch sử của vườn này không? Hành động này không thể hoàn tác!")) return;
+  
+  try {
+    showToast("⌛ Đang dọn dẹp thư viện...");
+    const res = await dbCleanupCameraHistory(selectedFarmId);
+    if (res.error) throw new Error(res.error);
+    
+    showToast(`✅ ${res.message}`);
+    loadCameraHistory(selectedFarmId);
+  } catch (err) {
+    showToast(`❌ Không thể dọn dẹp: ${err.message}`);
   }
 };
 

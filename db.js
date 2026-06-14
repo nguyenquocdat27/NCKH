@@ -146,6 +146,32 @@ async function dbTriggerLocalCapture(vuonId, cameraIndex = 0) {
   return res.json();
 }
 
+/** Upload ảnh chụp từ Camera trình duyệt (bất kỳ thiết bị nào) để phân tích AI */
+async function dbUploadCameraImage(vuonId, base64Image) {
+  const res = await fetch(`${DB_API}/camera/upload/${vuonId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ image: base64Image })
+  });
+  return res.json();
+}
+
+/** Xóa 1 ảnh trong lịch sử camera */
+async function dbDeleteCameraHistory(vuonId, recordId) {
+  const res = await fetch(`${DB_API}/camera/history/${vuonId}/${recordId}`, {
+    method: 'DELETE'
+  });
+  return res.json();
+}
+
+/** Xóa toàn bộ ảnh trong lịch sử camera của 1 vườn */
+async function dbCleanupCameraHistory(vuonId) {
+  const res = await fetch(`${DB_API}/camera/history/cleanup/${vuonId}`, {
+    method: 'DELETE'
+  });
+  return res.json();
+}
+
 
 
 // ========================================================

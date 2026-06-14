@@ -7,4 +7,5 @@ Pillow==12.1.1
 pymysql==1.1.2
 cryptography==46.0.5
 requests==2.33.0
+opencv-python-headless
 gradio_client

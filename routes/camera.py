@@ -212,8 +212,37 @@ def capture_local(vuon_id):
             'ai_result': ai_result
         }), 201
 
-    except ImportError:
-        return jsonify({'error': 'Thiếu thư viện opencv-python (cv2) trên máy chủ!'}), 500
+
+
+@camera_bp.route('/camera/history/<int:vuon_id>/<int:record_id>', methods=['DELETE'])
+def delete_camera_history(vuon_id, record_id):
+    """Xóa một ảnh trong lịch sử"""
+    try:
+        record = CameraAnalysis.query.filter_by(id=record_id, vuon_id=vuon_id).first()
+        if not record:
+            return jsonify({'error': 'Không tìm thấy bản ghi'}), 404
+            
+        db.session.delete(record)
+        db.session.commit()
+        return jsonify({'message': 'Đã xóa bản ghi thành công!'})
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
+
+@camera_bp.route('/camera/history/cleanup/<int:vuon_id>', methods=['DELETE'])
+def cleanup_camera_history(vuon_id):
+    """Xóa tất cả ảnh đã chụp của vườn này"""
+    try:
+        records = CameraAnalysis.query.filter_by(vuon_id=vuon_id).all()
+        count = len(records)
+        
+        for record in records:
+            db.session.delete(record)
+            
+        db.session.commit()
+        return jsonify({'message': f'Đã xóa {count} bản ghi cũ thành công!'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+

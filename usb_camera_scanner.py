@@ -14,10 +14,10 @@ from datetime import datetime
 # Đổi thành URL chạy của Flask Server của bạn (Local hoặc Render)
 # Chạy local: "http://localhost:5000"
 # Chạy Render: "https://your-app.onrender.com"
-SERVER_URL = "http://localhost:5000"
+SERVER_URL = "https://nckh-ai.onrender.com/"
 
 # Cài đặt vườn của bạn (Xem ID vườn trên giao diện web "Vườn của tôi" hoặc "Camera")
-VUON_ID = 1
+VUON_ID = 30001
 
 # Chọn Camera: 0 cho webcam mặc định, 1 hoặc 2 cho camera cắm USB ngoài
 CAMERA_INDEX = 0
