@@ -117,7 +117,7 @@ class CameraAnalysis(db.Model):
 
     id              = db.Column(db.Integer, primary_key=True)
     vuon_id         = db.Column(db.Integer, db.ForeignKey('vuons.id'), nullable=False)
-    image_data      = db.Column(db.Text, nullable=False) # Base64 string ảnh chụp
+    image_data      = db.Column(db.Text(4294967295), nullable=False) # Base64 string ảnh chụp (để size cực lớn -> LONGTEXT)
     scores          = db.Column(db.Text) # Điểm số AI dạng chuỗi JSON
     deficient_names = db.Column(db.Text) # Các chất bị thiếu (ví dụ: JSON list ["Canxi (Ca)"])
     recommendations = db.Column(db.Text) # Lời khuyên tổng hợp từ AI dạng JSON list
@@ -200,6 +200,14 @@ def init_db(app):
                     conn.execute(text("ALTER TABLE vuons ADD COLUMN camera_command VARCHAR(50) DEFAULT 'idle'"))
                     conn.commit()
                     print("⚙️  Đã thêm cột camera_command vào bảng vuons!")
+                except Exception:
+                    pass
+                    
+                # Nâng cấp image_data lên LONGTEXT để chứa ảnh lớn
+                try:
+                    conn.execute(text("ALTER TABLE camera_analysis MODIFY image_data LONGTEXT"))
+                    conn.commit()
+                    print("⚙️  Đã nâng cấp cột image_data lên LONGTEXT!")
                 except Exception:
                     pass
         except Exception as e_mig:
