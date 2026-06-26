@@ -1,12 +1,130 @@
       <!-- Guide -->
       <div id="guide-page" class="page-content hidden">
-        <div class="flex items-center gap-3 mb-6">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center"><i data-lucide="book-open" class="w-5 h-5 text-white"></i></div>
-          <div><h2 class="text-2xl font-bold text-slate-800">Hướng dẫn sử dụng</h2><p class="text-sm text-slate-500">Cách sử dụng hệ thống phát hiện thiếu chất cây ớt</p></div>
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+          <div class="flex items-center gap-3">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center shadow-lg">
+              <i data-lucide="book-open" class="w-6 h-6 text-white"></i>
+            </div>
+            <div>
+              <h2 class="text-2xl font-bold text-slate-800">Hướng dẫn vận hành</h2>
+              <p class="text-sm text-slate-500 mt-1">Cách thiết lập và sử dụng Hệ thống Giám sát Nông nghiệp AI</p>
+            </div>
+          </div>
+          <a href="/api/download-client" class="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-blue-500/30 transition-all transform hover:scale-105 active:scale-95">
+            <i data-lucide="download" class="w-5 h-5"></i>
+            Tải Phần Mềm Tại Vườn (.exe)
+          </a>
         </div>
-        <div class="space-y-6">
-          <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm"><div class="flex items-start gap-4"><div class="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center flex-shrink-0"><span class="text-lg font-bold text-blue-600">1</span></div><div><h3 class="text-lg font-semibold text-slate-800 mb-2">Kết nối ESP32</h3><p class="text-slate-600">Đi tới tab "ESP32 &amp; Cảm biến" và kết nối ESP32 với hệ thống WiFi.</p></div></div></div>
-          <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm"><div class="flex items-start gap-4"><div class="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0"><span class="text-lg font-bold text-green-600">2</span></div><div><h3 class="text-lg font-semibold text-slate-800 mb-2">Camera hoặc tải ảnh</h3><p class="text-slate-600">Dùng tab "Camera" để xem luồng từ ESP32 Cam, hoặc dùng tab "Tải ảnh &amp; Quét AI".</p></div></div></div>
-          <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm"><div class="flex items-start gap-4"><div class="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0"><span class="text-lg font-bold text-purple-600">3</span></div><div><h3 class="text-lg font-semibold text-slate-800 mb-2">Quét ảnh bằng AI</h3><p class="text-slate-600">Nhấn nút "Quét AI" để hệ thống phân tích cây ớt và phát hiện thiếu chất.</p></div></div></div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          <!-- Bước 1: Cài đặt phần mềm tại vườn -->
+          <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full">
+            <div class="flex items-center gap-3 mb-5">
+              <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="monitor-play" class="w-6 h-6 text-blue-600"></i>
+              </div>
+              <h3 class="text-xl font-bold text-slate-800">Bước 1: Giám sát tại Vườn</h3>
+            </div>
+            <p class="text-slate-600 mb-5 leading-relaxed text-sm">Phần mềm <strong>HeThongCamera_AI.exe</strong> được cài đặt trên máy tính hoặc hệ thống nhúng tại nhà vườn, có nhiệm vụ tự động điều khiển USB Camera để chụp ảnh lá cây và đồng bộ lên Cloud AI.</p>
+            <ul class="space-y-3 text-sm text-slate-600 flex-1">
+              <li class="flex items-start gap-2.5">
+                <i data-lucide="check-circle-2" class="w-5 h-5 text-blue-500 flex-shrink-0"></i> 
+                <span>Nhấn nút Tải phần mềm ở phía trên để tải về.</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <i data-lucide="check-circle-2" class="w-5 h-5 text-blue-500 flex-shrink-0"></i> 
+                <span>Chép phần mềm vào máy tính đang cắm USB Camera ở vườn.</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <i data-lucide="check-circle-2" class="w-5 h-5 text-blue-500 flex-shrink-0"></i> 
+                <span>Mở phần mềm, nhập <strong>URL Server</strong> và <strong>ID Vườn</strong> của bạn.</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <i data-lucide="check-circle-2" class="w-5 h-5 text-blue-500 flex-shrink-0"></i> 
+                <span>Nhấn <strong>"Bắt đầu giám sát"</strong> để hệ thống tự động chụp theo chu kỳ.</span>
+              </li>
+            </ul>
+            <div class="mt-6 p-4 bg-orange-50 rounded-xl border border-orange-100 flex gap-3">
+              <i data-lucide="alert-triangle" class="w-5 h-5 text-orange-600 flex-shrink-0"></i>
+              <p class="text-xs text-orange-800 font-medium leading-relaxed">Không tắt phần mềm trong quá trình trồng trọt nếu muốn hệ thống báo cáo hình ảnh cây trồng liên tục.</p>
+            </div>
+          </div>
+      
+          <!-- Bước 2: Xem kết quả và Điều khiển từ xa -->
+          <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full">
+            <div class="flex items-center gap-3 mb-5">
+              <div class="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="smartphone" class="w-6 h-6 text-emerald-600"></i>
+              </div>
+              <h3 class="text-xl font-bold text-slate-800">Bước 2: Theo dõi từ xa</h3>
+            </div>
+            <p class="text-slate-600 mb-5 leading-relaxed text-sm">Sau khi phần mềm tại vườn hoạt động, bạn có thể dùng Smartphone hoặc Laptop đăng nhập vào trang web này ở bất cứ đâu để xem kết quả.</p>
+            <ul class="space-y-3 text-sm text-slate-600 flex-1">
+              <li class="flex items-start gap-2.5">
+                <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-500 flex-shrink-0"></i> 
+                <span>Vào tab <strong>Camera</strong> để xem toàn bộ lịch sử ảnh và cảnh báo thiếu chất dinh dưỡng do AI quét được.</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-500 flex-shrink-0"></i> 
+                <span>Nhấn <strong>"Yêu cầu chụp từ Server"</strong> để ra lệnh cho camera ở vườn lập tức chụp và gửi ảnh về điện thoại của bạn.</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-500 flex-shrink-0"></i> 
+                <span>Có thể dùng ngay tính năng <strong>"Chụp bằng Camera thiết bị này"</strong> nếu bạn đang đứng trực tiếp tại vườn.</span>
+              </li>
+            </ul>
+          </div>
+      
+          <!-- Bước 3: Thu thập dữ liệu cảm biến -->
+          <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full">
+            <div class="flex items-center gap-3 mb-5">
+              <div class="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="cpu" class="w-6 h-6 text-purple-600"></i>
+              </div>
+              <h3 class="text-xl font-bold text-slate-800">Bước 3: Mạch Cảm Biến</h3>
+            </div>
+            <p class="text-slate-600 mb-5 leading-relaxed text-sm">Bên cạnh Camera, hệ thống sử dụng mạch vi điều khiển (VD: ESP32) để đo đạc các thông số thời tiết và đất đai thực tế.</p>
+            <ul class="space-y-3 text-sm text-slate-600 flex-1">
+              <li class="flex items-start gap-2.5">
+                <i data-lucide="check-circle-2" class="w-5 h-5 text-purple-500 flex-shrink-0"></i> 
+                <span>Cắm cọc cảm biến xuống đất và kết nối mạch vào mạng WiFi của vườn.</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <i data-lucide="check-circle-2" class="w-5 h-5 text-purple-500 flex-shrink-0"></i> 
+                <span>Mạch sẽ liên tục gửi Nhiệt độ, Độ ẩm, Ánh sáng về Server.</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <i data-lucide="check-circle-2" class="w-5 h-5 text-purple-500 flex-shrink-0"></i> 
+                <span>Vào tab <strong>ESP32 &amp; Cảm biến</strong> để theo dõi trực quan trên các biểu đồ thay đổi theo thời gian.</span>
+              </li>
+            </ul>
+          </div>
+      
+          <!-- Bước 4: Chẩn đoán Offline -->
+          <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex flex-col h-full">
+            <div class="flex items-center gap-3 mb-5">
+              <div class="w-12 h-12 rounded-xl bg-pink-100 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="upload-cloud" class="w-6 h-6 text-pink-600"></i>
+              </div>
+              <h3 class="text-xl font-bold text-slate-800">Bước 4: Quét AI Thủ công</h3>
+            </div>
+            <p class="text-slate-600 mb-5 leading-relaxed text-sm">Trường hợp mất mạng hoặc không có Camera tự động, bạn vẫn có thể tận dụng lõi AI để khám bệnh cho cây bằng ảnh chụp sẵn.</p>
+            <ul class="space-y-3 text-sm text-slate-600 flex-1">
+              <li class="flex items-start gap-2.5">
+                <i data-lucide="check-circle-2" class="w-5 h-5 text-pink-500 flex-shrink-0"></i> 
+                <span>Chuyển sang tab <strong>Tải ảnh &amp; Quét AI</strong>.</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <i data-lucide="check-circle-2" class="w-5 h-5 text-pink-500 flex-shrink-0"></i> 
+                <span>Kéo thả file ảnh lá cây bị nghi ngờ thiếu chất vào ô tải lên.</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <i data-lucide="check-circle-2" class="w-5 h-5 text-pink-500 flex-shrink-0"></i> 
+                <span>Hệ thống sẽ lập tức nhận diện mức độ khỏe mạnh và đưa ra lời khuyên bón phân phục hồi tương ứng.</span>
+              </li>
+            </ul>
+          </div>
+      
         </div>
       </div>

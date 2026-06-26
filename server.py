@@ -45,6 +45,18 @@ app.register_blueprint(camera_bp,  url_prefix='/api')
 
 
 # ========================================================
+# DOWNLOAD ROUTES
+# ========================================================
+@app.route('/api/download-client')
+def download_client():
+    import os
+    client_path = os.path.join(app.root_path, 'client_app', 'dist')
+    if not os.path.exists(os.path.join(client_path, 'HeThongCamera_AI.exe')):
+        return "File chưa được build. Vui lòng chạy build_camera_exe.bat trên Server.", 404
+    return send_from_directory(client_path, 'HeThongCamera_AI.exe', as_attachment=True)
+
+
+# ========================================================
 # ROUTES STATIC FILES VÀ TRANG CHỦ
 # ========================================================
 @app.route('/')
