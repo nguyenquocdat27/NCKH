@@ -65,6 +65,9 @@ class Vuon(db.Model):
     ghi_chu     = db.Column(db.Text)
     camera_interval = db.Column(db.Integer, default=30) # Chu kỳ tự động chụp (phút), 0 là tắt
     camera_command  = db.Column(db.String(50), default='idle') # Lệnh từ server: 'idle' hoặc 'capture'
+    manual          = db.Column(db.Boolean, default=False)
+    fan_state       = db.Column(db.Boolean, default=False)
+    pump_state      = db.Column(db.Boolean, default=False)
     ngay_tao    = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Quan hệ với cảm biến
@@ -81,6 +84,9 @@ class Vuon(db.Model):
             'ghi_chu':         self.ghi_chu,
             'camera_interval': self.camera_interval,
             'camera_command':  self.camera_command,
+            'manual':          self.manual,
+            'fan_state':       self.fan_state,
+            'pump_state':      self.pump_state,
             'ngay_tao':        self.ngay_tao.strftime('%d/%m/%Y'),
         }
 
@@ -208,6 +214,30 @@ def init_db(app):
                     conn.execute(text("ALTER TABLE camera_analysis MODIFY image_data LONGTEXT"))
                     conn.commit()
                     print("⚙️  Đã nâng cấp cột image_data lên LONGTEXT!")
+                except Exception:
+                    pass
+
+                # Check và thêm manual
+                try:
+                    conn.execute(text("ALTER TABLE vuons ADD COLUMN manual BOOLEAN DEFAULT FALSE"))
+                    conn.commit()
+                    print("⚙️  Đã thêm cột manual vào bảng vuons!")
+                except Exception:
+                    pass
+
+                # Check và thêm fan_state
+                try:
+                    conn.execute(text("ALTER TABLE vuons ADD COLUMN fan_state BOOLEAN DEFAULT FALSE"))
+                    conn.commit()
+                    print("⚙️  Đã thêm cột fan_state vào bảng vuons!")
+                except Exception:
+                    pass
+
+                # Check và thêm pump_state
+                try:
+                    conn.execute(text("ALTER TABLE vuons ADD COLUMN pump_state BOOLEAN DEFAULT FALSE"))
+                    conn.commit()
+                    print("⚙️  Đã thêm cột pump_state vào bảng vuons!")
                 except Exception:
                     pass
         except Exception as e_mig:

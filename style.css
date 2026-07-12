@@ -89,3 +89,22 @@ body { box-sizing: border-box; }
     background: white; border-radius: 20px; padding: 30px; max-width: 900px;
     width: 100%; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 }
+
+/* Hoạt ảnh cho thiết bị (Quạt & Bơm) */
+@keyframes spin-slow {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+.animate-spin-slow {
+    animation: spin-slow 3s linear infinite;
+}
+.animate-spin-fast {
+    animation: spin-slow 0.8s linear infinite;
+}
+@keyframes pulse-blue {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(0.9); }
+}
+.animate-pulse-blue {
+    animation: pulse-blue 1.5s ease-in-out infinite;
+}

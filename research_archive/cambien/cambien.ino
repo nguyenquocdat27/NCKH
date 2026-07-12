@@ -12,8 +12,11 @@ const char* ssid = "Quoc Dat_2.4G";
 const char* password = "88888888";
 
 // ==========================================
-// CẤU HÌNH CHÂN CẢM BIẾN
+// CẤU HÌNH CHÂN CẢM BIẾN & THIẾT BỊ
 // ==========================================
+
+// Cấu hình chân Relay điều khiển Quạt
+#define FAN_PIN 18 
 
 // 1. Máy đo Nhiệt độ nước/đất DS18B20 (Waterproof)
 #define ONE_WIRE_BUS 5   // Chân Data cắm vào IO5 (Cần trở kéo 4.7k ohm lên 3.3V)
@@ -26,17 +29,17 @@ DallasTemperature ds18b20(&oneWire);
 
 // 3. Cảm biến Độ ẩm đất điện dung (Capacitive Soil Moisture Sensor)
 #define SOIL_MOISTURE_PIN 4  // Cắm chân analog Aout vào G4
-// Hiệu chuẩn Độ ẩm: (Bạn cần nhúng xuống nước và để khô để ra số chính xác nhất)
 const int DRY_VALUE_ADC = 3500;  // Giá trị adc khi để ngoài không khí khô
 const int WET_VALUE_ADC = 1200;  // Giá trị adc khi nhúng ngập trong nước
+
+// Biến lưu trạng thái quạt để đảo trạng thái sau mỗi chu kỳ
+bool isFanOn = false; 
 
 // ==========================================
 // CẤU HÌNH SERVER KẾT NỐI
 // ==========================================
 const char* serverUrl = "https://nckh-ai.onrender.com/api/sensors";
-
-// ID Của Vườn trong Database TiDB/MySQL
-const int VUON_ID = 30001;
+const int VUON_ID = 30001; // ID Của Vườn trong Database TiDB/MySQL
 
 void setup() {
   Serial.begin(115200);
@@ -44,16 +47,12 @@ void setup() {
 
   Serial.println("ESP32 STARTED");
 
+  // KHỞI TẠO CHÂN ĐIỀU KHIỂN QUẠT
+  pinMode(FAN_PIN, OUTPUT);
+  digitalWrite(FAN_PIN, HIGH); // Mặc định tắt quạt ban đầu (Active Low)
+
   // Khởi tạo DS18B20
   ds18b20.begin();
-
-  // // Khởi tạo BH1750 [TẠM TẮT]
-  // Wire.begin();
-  // if (lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE)) {
-  //   Serial.println(F("Khởi tạo BH1750 thành công."));
-  // } else {
-  //   Serial.println(F("Lỗi: Không tìm thấy BH1750!"));
-  // }
 
   // Kết nối WiFi
   Serial.println("\nĐang kết nối WiFi...");
@@ -78,7 +77,6 @@ void loop() {
   ds18b20.requestTemperatures();
   float temperature = ds18b20.getTempCByIndex(0);
 
-  // Kiểm tra lỗi DS18B20 (Nhiệt độ -127 = đứt cáp)
   if (temperature == -127.00) {
     Serial.println("⚠️  Lỗi: Cảm biến DS18B20 chưa kết nối hoặc đứt cáp!");
     temperature = 25.0; // Fallback để test server
@@ -87,7 +85,6 @@ void loop() {
   // 2. Đọc Độ ẩm đất (Capacitive Sensor)
   int soilAdcVal = analogRead(SOIL_MOISTURE_PIN);
 
-  // Kiểm tra cảm biến độ ẩm có kết nối không (ADC < 100 = chưa cắm dây → không gửi)
   if (soilAdcVal < 100) {
     Serial.println("⚠️  Lỗi: Cảm biến độ ẩm chưa kết nối! (ADC < 100)");
     delay(2000);
@@ -97,8 +94,6 @@ void loop() {
   int humidity = map(soilAdcVal, DRY_VALUE_ADC, WET_VALUE_ADC, 0, 100);
   humidity = constrain(humidity, 0, 100); // Ràng buộc 0–100%
 
-  // // 3. Đọc Ánh sáng (BH1750) [TẠM TẮT]
-  // float light = lightMeter.readLightLevel();
   float light = 0.0;
 
   // In ra Serial Monitor
@@ -140,6 +135,19 @@ void loop() {
     Serial.println("Lỗi: Mất kết nối WiFi.");
   }
 
-  // Chờ 5 giây (Tạo tính năng Keep-alive giúp Server Render không bao giờ ngủ)
+  // ==========================================
+  // LOGIC BẬT TẮT QUẠT THEO THỜI GIAN (Xen kẽ mỗi chu kỳ)
+  // ==========================================
+  isFanOn = !isFanOn; // Đảo trạng thái quạt (Nếu đang bật -> tắt, đang tắt -> bật)
+
+  if (isFanOn) {
+    digitalWrite(FAN_PIN, LOW);  // Kích mức THẤP để BẬT quạt
+    Serial.println("💨 [THIẾT BỊ] -> ĐÃ BẬT QUẠT");
+  } else {
+    digitalWrite(FAN_PIN, HIGH); // Kích mức CAO để TẮT quạt
+    Serial.println("🛑 [THIẾT BỊ] -> ĐÃ TẮT QUẠT");
+  }
+
+  // Chờ 5 giây cho chu kỳ tiếp theo
   delay(5000);
 }
