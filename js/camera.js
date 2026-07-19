@@ -281,6 +281,10 @@ window.openBrowserCamera = async function() {
       browserCameraStream.getTracks().forEach(t => t.stop());
     }
 
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      throw new Error("Trình duyệt không hỗ trợ Camera hoặc bạn đang truy cập qua HTTP thay vì HTTPS/localhost.");
+    }
+
     browserCameraStream = await navigator.mediaDevices.getUserMedia({
       video: {
         facingMode: facingMode,
@@ -815,6 +819,11 @@ async function startCamera() {
   try {
     if (!camera) return;
     camera.classList.remove('hidden');
+    
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      throw new Error("Trình duyệt không hỗ trợ API Camera hoặc bạn đang không dùng HTTPS/localhost.");
+    }
+
     // Yêu cầu độ phân giải cao, phù hợp cho WebCam USB gắn ngoài
     const stream = await navigator.mediaDevices.getUserMedia({ 
       video: { width: { ideal: 1920 }, height: { ideal: 1080 } } 

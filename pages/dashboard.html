@@ -1,19 +1,106 @@
       <!-- Dashboard -->
-      <div id="dashboard-page" class="page-content">
+      <div id="dashboard-page" class="page-content page-container">
         <div class="flex items-center gap-3 mb-6">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center"><i data-lucide="layout-dashboard" class="w-5 h-5 text-white"></i></div>
-          <div><h2 class="text-2xl font-bold text-slate-800">Dashboard</h2><p class="text-sm text-slate-500">Quản lý vườn ớt và phát hiện thiếu chất</p></div>
+          <div class="w-12 h-12 rounded-[16px] liquid-glass flex items-center justify-center shadow-lg border border-white/80 relative overflow-hidden">
+            <div class="absolute inset-0 bg-gradient-to-br from-[#2D6A4F]/80 to-[#52B788]/80"></div>
+            <i data-lucide="layout-dashboard" class="w-6 h-6 text-white relative z-10"></i>
+          </div>
+          <div><h2 class="text-3xl font-bold font-sans text-slate-800 tracking-wide">Tổng Quan</h2><p class="text-sm font-medium text-slate-500">Quản lý vườn trồng và theo dõi sức khỏe cây</p></div>
         </div>
-        <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm mb-6">
-          <div class="flex items-center justify-between">
-            <div><p class="text-sm text-slate-500 mb-1">Người dùng</p><h3 class="text-2xl font-bold text-slate-800" id="user-name">Nguyễn Văn A</h3></div>
-            <div class="w-14 h-14 rounded-full bg-gradient-to-br from-red-400 to-orange-500 flex items-center justify-center text-white text-2xl font-bold">NVA</div>
+        
+        <!-- Welcome Banner -->
+        <div class="relative rounded-[32px] overflow-hidden mb-8 liquid-glass border border-white/80 shadow-2xl group">
+          <div class="absolute inset-0 z-0">
+            <img src="assets/images/hero_chili_field.png" alt="Chili Field" class="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-1000">
+            <div class="absolute inset-0 bg-gradient-to-r from-[#1B4332]/95 via-[#2D6A4F]/70 to-transparent backdrop-blur-md"></div>
+          </div>
+          <div class="relative z-10 p-8 sm:p-10 flex items-center justify-between">
+            <div class="text-white">
+              <p class="text-green-100/90 font-medium mb-1 drop-shadow-sm flex items-center gap-2">
+                <span class="relative flex h-3 w-3">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                </span>
+                Hệ thống đang hoạt động
+              </p>
+              <h3 class="text-3xl sm:text-4xl font-bold font-sans drop-shadow-md mb-2 mt-2" id="user-name">Nguyễn Văn A</h3>
+              <p class="text-sm text-green-50/90 max-w-md leading-relaxed mt-3">Tất cả các chỉ số môi trường tại vườn đều ở mức lý tưởng. AI không phát hiện dấu hiệu bệnh hại nào trong 24 giờ qua.</p>
+            </div>
+            
+            <div class="hidden sm:flex flex-col items-center justify-center gap-3">
+              <div class="w-24 h-24 rounded-[24px] liquid-glass flex items-center justify-center text-white text-4xl font-black border border-white/40 shadow-2xl shadow-black/20 animate-float relative overflow-hidden">
+                <div class="absolute -right-4 -top-4 w-12 h-12 bg-white/30 rounded-full blur-xl"></div>
+                NVA
+              </div>
+            </div>
           </div>
         </div>
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-6">
-          <div class="card-hover bg-gradient-to-br from-white to-red-50/30 rounded-3xl p-5 border-2 border-transparent hover:border-red-200 shadow-sm"><div class="flex items-center justify-between mb-3"><div class="w-12 h-12 rounded-2xl bg-red-100 flex items-center justify-center shadow-inner"><i data-lucide="trees" class="w-6 h-6 text-red-600"></i></div><span class="text-3xl font-black text-red-600 drop-shadow-sm" id="farms-count">0</span></div><p class="text-sm font-medium text-slate-500">Số vườn ớt</p></div>
-          <div class="card-hover bg-gradient-to-br from-white to-violet-50/30 rounded-3xl p-5 border-2 border-transparent hover:border-violet-200 shadow-sm"><div class="flex items-center justify-between mb-3"><div class="w-12 h-12 rounded-2xl bg-violet-100 flex items-center justify-center shadow-inner"><i data-lucide="camera" class="w-6 h-6 text-violet-600"></i></div><span class="text-3xl font-black text-violet-600 drop-shadow-sm" id="scan-count">0</span></div><p class="text-sm font-medium text-slate-500">Lần quét AI</p></div>
-          <div class="card-hover bg-gradient-to-br from-white to-orange-50/30 rounded-3xl p-5 border-2 border-transparent hover:border-orange-200 shadow-sm"><div class="flex items-center justify-between mb-3"><div class="w-12 h-12 rounded-2xl bg-orange-100 flex items-center justify-center shadow-inner"><i data-lucide="alert-triangle" class="w-6 h-6 text-orange-600"></i></div><span class="text-3xl font-black text-orange-600 drop-shadow-sm" id="alert-count">0</span></div><p class="text-sm font-medium text-slate-500">Cảnh báo</p></div>
-          <div class="card-hover bg-gradient-to-br from-white to-green-50/30 rounded-3xl p-5 border-2 border-transparent hover:border-green-200 shadow-sm"><div class="flex items-center justify-between mb-3"><div class="w-12 h-12 rounded-2xl bg-green-100 flex items-center justify-center shadow-inner"><i data-lucide="heart" class="w-6 h-6 text-green-600"></i></div><span class="text-3xl font-black text-green-600 drop-shadow-sm" id="health-percent">95%</span></div><p class="text-sm font-medium text-slate-500">Sức khỏe</p></div>
+
+        <div class="flex items-center justify-between mb-5">
+          <h3 class="text-xl font-bold font-sans text-slate-800">Chỉ số tóm tắt</h3>
+          <button onclick="switchPage('my-farms')" class="text-sm font-bold text-[#2D6A4F] hover:text-[#1B4332] flex items-center gap-1 transition-colors">Xem chi tiết <i data-lucide="arrow-right" class="w-4 h-4"></i></button>
         </div>
+        
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+          <!-- Card 1 -->
+          <div class="card-hover liquid-glass rounded-[28px] p-6 shadow-lg border border-white/80 relative overflow-hidden group">
+            <div class="absolute -right-10 -top-10 w-32 h-32 bg-[#52B788] rounded-full blur-[40px] opacity-30 group-hover:opacity-60 group-hover:scale-150 transition-all duration-700"></div>
+            <div class="flex items-center justify-between mb-5 relative z-10">
+              <div class="w-14 h-14 rounded-2xl liquid-glass flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform duration-500">
+                <i data-lucide="trees" class="w-7 h-7 text-[#2D6A4F]"></i>
+              </div>
+              <span class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-[#2D6A4F] to-[#52B788] drop-shadow-sm" id="farms-count">0</span>
+            </div>
+            <p class="text-sm font-bold text-slate-600 relative z-10">Số vườn ớt đang quản lý</p>
+            <div class="w-full bg-slate-200/50 rounded-full h-1.5 mt-4 relative z-10 overflow-hidden">
+              <div class="bg-gradient-to-r from-[#2D6A4F] to-[#52B788] h-1.5 rounded-full" style="width: 100%"></div>
+            </div>
+          </div>
+          
+          <!-- Card 2 -->
+          <div class="card-hover liquid-glass rounded-[28px] p-6 shadow-lg border border-white/80 relative overflow-hidden group">
+            <div class="absolute -right-10 -top-10 w-32 h-32 bg-[#8B6914] rounded-full blur-[40px] opacity-30 group-hover:opacity-60 group-hover:scale-150 transition-all duration-700"></div>
+            <div class="flex items-center justify-between mb-5 relative z-10">
+              <div class="w-14 h-14 rounded-2xl liquid-glass flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform duration-500">
+                <i data-lucide="camera" class="w-7 h-7 text-[#8B6914]"></i>
+              </div>
+              <span class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-[#8B6914] to-amber-500 drop-shadow-sm" id="scan-count">0</span>
+            </div>
+            <p class="text-sm font-bold text-slate-600 relative z-10">Lượt quét AI phân tích</p>
+            <div class="w-full bg-slate-200/50 rounded-full h-1.5 mt-4 relative z-10 overflow-hidden">
+              <div class="bg-gradient-to-r from-[#8B6914] to-amber-400 h-1.5 rounded-full" style="width: 70%"></div>
+            </div>
+          </div>
+          
+          <!-- Card 3 -->
+          <div class="card-hover liquid-glass rounded-[28px] p-6 shadow-lg border border-white/80 relative overflow-hidden group">
+            <div class="absolute -right-10 -top-10 w-32 h-32 bg-rose-500 rounded-full blur-[40px] opacity-20 group-hover:opacity-50 group-hover:scale-150 transition-all duration-700"></div>
+            <div class="flex items-center justify-between mb-5 relative z-10">
+              <div class="w-14 h-14 rounded-2xl liquid-glass flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform duration-500">
+                <i data-lucide="alert-triangle" class="w-7 h-7 text-rose-600"></i>
+              </div>
+              <span class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-rose-600 to-rose-400 drop-shadow-sm" id="alert-count">0</span>
+            </div>
+            <p class="text-sm font-bold text-slate-600 relative z-10">Cảnh báo sâu bệnh</p>
+            <div class="w-full bg-slate-200/50 rounded-full h-1.5 mt-4 relative z-10 overflow-hidden">
+              <div class="bg-gradient-to-r from-rose-600 to-rose-400 h-1.5 rounded-full" style="width: 10%"></div>
+            </div>
+          </div>
+          
+          <!-- Card 4 -->
+          <div class="card-hover liquid-glass rounded-[28px] p-6 shadow-lg border border-white/80 relative overflow-hidden group">
+            <div class="absolute -right-10 -top-10 w-32 h-32 bg-emerald-500 rounded-full blur-[40px] opacity-30 group-hover:opacity-60 group-hover:scale-150 transition-all duration-700"></div>
+            <div class="flex items-center justify-between mb-5 relative z-10">
+              <div class="w-14 h-14 rounded-2xl liquid-glass flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform duration-500">
+                <i data-lucide="heart" class="w-7 h-7 text-emerald-600"></i>
+              </div>
+              <span class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-br from-emerald-600 to-emerald-400 drop-shadow-sm" id="health-percent">95%</span>
+            </div>
+            <p class="text-sm font-bold text-slate-600 relative z-10">Sức khỏe trung bình</p>
+            <div class="w-full bg-slate-200/50 rounded-full h-1.5 mt-4 relative z-10 overflow-hidden">
+              <div class="bg-gradient-to-r from-emerald-600 to-emerald-400 h-1.5 rounded-full" style="width: 95%"></div>
+            </div>
+          </div>
+        </div>
+        
       </div>

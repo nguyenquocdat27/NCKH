@@ -14,26 +14,60 @@ function showScreen(screenId) {
   }
 }
 
+let isAnimatingPage = false;
+
 function switchPage(page) {
-  document.querySelectorAll('[id$="-page"]').forEach(el => el.classList.add('hidden'));
-  const pageEl = document.getElementById(page + '-page');
-  if (pageEl) pageEl.classList.remove('hidden');
+  if (isAnimatingPage) return;
+  const targetPage = document.getElementById(page + '-page');
+  if (!targetPage) return;
 
+  // Update tabs
   document.querySelectorAll('.nav-tab').forEach(tab => {
-    tab.classList.remove('tab-active', 'border-red-500', 'text-red-600');
-    tab.classList.add('tab-inactive', 'border-transparent', 'text-slate-600');
+    tab.classList.remove('tab-active', 'font-bold', 'bg-[#2D6A4F]', 'text-white', 'shadow-md');
+    tab.classList.add('tab-inactive', 'font-semibold', 'text-slate-600', 'hover:text-[#2D6A4F]', 'hover:bg-white/60');
   });
-  if (event && event.target && event.target.classList) {
-    event.target.classList.remove('tab-inactive', 'border-transparent', 'text-slate-600');
-    event.target.classList.add('tab-active', 'border-red-500', 'text-red-600');
-  }
-  
-  // Khởi tạo trang camera nếu chuyển qua tab camera
-  if (page === 'camera' && window.initCameraPage) {
-    window.initCameraPage();
+  if (event && event.target) {
+    const targetTab = event.target.closest ? event.target.closest('.nav-tab') : event.target;
+    if (targetTab && targetTab.classList) {
+      targetTab.classList.remove('tab-inactive', 'font-semibold', 'text-slate-600', 'hover:text-[#2D6A4F]', 'hover:bg-white/60');
+      targetTab.classList.add('tab-active', 'font-bold', 'bg-[#2D6A4F]', 'text-white', 'shadow-md');
+    }
   }
 
-  lucide.createIcons();
+  // Find currently visible page
+  let currentPage = null;
+  document.querySelectorAll('[id$="-page"]').forEach(el => {
+    if (!el.classList.contains('hidden')) currentPage = el;
+  });
+
+  if (currentPage && currentPage !== targetPage) {
+    isAnimatingPage = true;
+    currentPage.classList.add('page-exit');
+    setTimeout(() => {
+      currentPage.classList.add('hidden');
+      currentPage.classList.remove('page-exit');
+      
+      targetPage.classList.remove('hidden');
+      targetPage.classList.add('page-enter');
+      
+      setTimeout(() => {
+        targetPage.classList.remove('page-enter');
+        isAnimatingPage = false;
+        if (page === 'camera' && window.initCameraPage) window.initCameraPage();
+        lucide.createIcons();
+      }, 500); 
+    }, 400); 
+  } else if (!currentPage) {
+    targetPage.classList.remove('hidden');
+    targetPage.classList.add('page-enter');
+    isAnimatingPage = true;
+    setTimeout(() => {
+      targetPage.classList.remove('page-enter');
+      isAnimatingPage = false;
+      if (page === 'camera' && window.initCameraPage) window.initCameraPage();
+      lucide.createIcons();
+    }, 500);
+  }
 }
 
 function switchPageMobile(page) {

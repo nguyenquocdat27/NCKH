@@ -37,18 +37,21 @@ function switchAuthTab(tab) {
   const loginForm = document.getElementById('login-form');
   const signupForm = document.getElementById('signup-form');
 
+  const activeClasses = ['text-[#2D6A4F]', 'bg-white', 'shadow-sm'];
+  const inactiveClasses = ['text-white', 'hover:bg-white/10'];
+
   if (tab === 'login') {
-    loginTab.classList.add('text-red-600', 'bg-red-50');
-    loginTab.classList.remove('text-slate-600');
-    signupTab.classList.remove('text-red-600', 'bg-red-50');
-    signupTab.classList.add('text-slate-600');
+    loginTab.classList.add(...activeClasses);
+    loginTab.classList.remove(...inactiveClasses);
+    signupTab.classList.remove(...activeClasses);
+    signupTab.classList.add(...inactiveClasses);
     loginForm.classList.remove('hidden');
     signupForm.classList.add('hidden');
   } else {
-    signupTab.classList.add('text-red-600', 'bg-red-50');
-    signupTab.classList.remove('text-slate-600');
-    loginTab.classList.remove('text-red-600', 'bg-red-50');
-    loginTab.classList.add('text-slate-600');
+    signupTab.classList.add(...activeClasses);
+    signupTab.classList.remove(...inactiveClasses);
+    loginTab.classList.remove(...activeClasses);
+    loginTab.classList.add(...inactiveClasses);
     signupForm.classList.remove('hidden');
     loginForm.classList.add('hidden');
   }

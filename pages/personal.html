@@ -1,44 +1,77 @@
 <!-- ========== MÀN HÌNH CÁ NHÂN ========== -->
-<div id="personal-screen" class="hidden min-h-screen flex flex-col items-center justify-center p-6">
-  <div class="w-full max-w-sm">
-    <button type="button" onclick="goBack()" class="mb-6 flex items-center gap-2 text-slate-600 hover:text-black">
+<div id="personal-screen" class="hidden min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden">
+  
+  <!-- Abstract Leaf Background -->
+  <div class="absolute inset-0 z-0 bg-[#F4F9F4]">
+    <div class="absolute top-[-10%] right-[-5%] w-96 h-96 bg-[#CDE4D6] rounded-full blur-3xl opacity-50"></div>
+    <div class="absolute bottom-[-10%] left-[-5%] w-80 h-80 bg-[#52B788] rounded-full blur-3xl opacity-20"></div>
+  </div>
+
+  <div class="w-full max-w-md z-10 relative">
+    <button type="button" onclick="goBack()" class="mb-6 flex items-center gap-2 text-[#2D6A4F] hover:text-[#1B4332] font-semibold transition-colors bg-white/50 px-4 py-2 rounded-full backdrop-blur-sm w-fit border border-white/60 shadow-sm">
       <i data-lucide="arrow-left" class="w-5 h-5"></i>
       <span>Quay lại</span>
     </button>
-    <h2 class="text-2xl font-bold mb-6 text-slate-800">Quét sâu bệnh cây trồng</h2>
-    <div class="w-full aspect-square border-2 border-dashed border-purple-300 rounded-3xl flex items-center justify-center bg-purple-50/50 mb-6 overflow-hidden relative shadow-inner">
-      <img id="preview-image" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 24 24' fill='none' stroke='%23a855f7' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='2' ry='2'/%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'/%3E%3Cpolyline points='21 15 16 10 5 21'/%3E%3C/svg%3E" class="max-h-full max-w-full object-contain drop-shadow-sm transition-all duration-300"/>
+    
+    <div class="text-center mb-6">
+      <h2 class="text-3xl font-bold font-sans text-[#1B4332] mb-2 drop-shadow-sm">Chẩn đoán AI</h2>
+      <p class="text-[#2D6A4F] text-sm font-medium">Chụp hoặc tải lên ảnh lá cây để phân tích dinh dưỡng</p>
     </div>
+
+    <div class="w-full aspect-square border-2 border-dashed border-[#52B788] rounded-[32px] flex items-center justify-center bg-white/60 backdrop-blur-md mb-6 overflow-hidden relative shadow-inner hover:bg-white/80 transition-colors duration-300">
+      <!-- Decorative scanning line (hidden by default, shown during scan) -->
+      <div id="scan-line" class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#52B788] to-transparent shadow-[0_0_15px_#52B788] hidden z-20"></div>
+      
+      <!-- Default SVG Image before upload -->
+      <img id="preview-image" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 24 24' fill='none' stroke='%2352B788' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 22C17.5 22 22 17.5 22 12C22 6.5 17.5 2 12 2C6.5 2 2 6.5 2 12C2 17.5 6.5 22 12 22Z'/%3E%3Cpath d='M12 2V22'/%3E%3Cpath d='M12 12C9 9 5.5 8 2.5 8'/%3E%3Cpath d='M12 12C15 9 18.5 8 21.5 8'/%3E%3C/svg%3E" class="max-h-full max-w-full object-contain drop-shadow-sm transition-all duration-300 p-8 opacity-60"/>
+    </div>
+    
     <input type="file" id="imageInput" accept="image/*" class="hidden">
-    <video id="camera" class="hidden w-full rounded-2xl mb-4" autoplay playsinline></video>
+    <video id="camera" class="hidden w-full rounded-[32px] mb-6 shadow-lg object-cover aspect-square border-4 border-white/50" autoplay playsinline></video>
     <canvas id="canvas" class="hidden"></canvas>
-    <div class="flex gap-3 w-full mb-4">
-      <button onclick="chooseImage()" class="flex-1 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 py-3.5 rounded-xl font-medium transition-all shadow-sm flex flex-col items-center gap-1">
-        <i data-lucide="image" class="w-5 h-5 text-blue-500"></i><span class="text-xs">Thư viện</span>
+    
+    <div class="flex gap-3 w-full mb-6">
+      <button onclick="chooseImage()" class="flex-1 glass-card border border-white/60 hover:bg-white text-slate-700 py-3.5 rounded-[20px] font-medium transition-all shadow-sm hover:shadow-md flex flex-col items-center gap-1.5 group">
+        <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center group-hover:scale-110 transition-transform">
+          <i data-lucide="image" class="w-5 h-5 text-blue-500"></i>
+        </div>
+        <span class="text-xs font-bold text-slate-600">Thư viện</span>
       </button>
-      <button id="camera-btn" onclick="startCamera()" class="flex-1 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 py-3.5 rounded-xl font-medium transition-all shadow-sm flex flex-col items-center gap-1">
-        <i data-lucide="camera" class="w-5 h-5 text-green-500"></i><span class="text-xs">Chụp ảnh</span>
+      
+      <button id="camera-btn" onclick="startCamera()" class="flex-1 glass-card border border-white/60 hover:bg-white text-slate-700 py-3.5 rounded-[20px] font-medium transition-all shadow-sm hover:shadow-md flex flex-col items-center gap-1.5 group">
+        <div class="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center group-hover:scale-110 transition-transform">
+          <i data-lucide="camera" class="w-5 h-5 text-emerald-500"></i>
+        </div>
+        <span class="text-xs font-bold text-slate-600">Chụp ảnh</span>
       </button>
-      <button onclick="scanAI()" class="flex-1 bg-gradient-to-br from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white py-3.5 rounded-xl font-bold transition-all shadow-md flex flex-col items-center gap-1 transform hover:-translate-y-0.5">
-        <i data-lucide="sparkles" class="w-5 h-5"></i><span class="text-xs">Quét AI</span>
+      
+      <button onclick="scanAI()" class="flex-1 bg-gradient-to-br from-[#2D6A4F] to-[#52B788] hover:from-[#1B4332] hover:to-[#40916C] text-white py-3.5 rounded-[20px] font-bold transition-all shadow-lg shadow-[#52B788]/30 flex flex-col items-center gap-1.5 transform hover:-translate-y-1">
+        <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center relative overflow-hidden">
+          <div class="absolute inset-0 bg-white/20 opacity-0 hover:opacity-100 transition-opacity"></div>
+          <i data-lucide="sparkles" class="w-5 h-5 text-white"></i>
+        </div>
+        <span class="text-xs font-bold">Quét AI</span>
       </button>
     </div>
-    <div id="ai-result-box" class="hidden w-full bg-white rounded-2xl border border-slate-200 shadow-sm p-5 analysis-result">
+    
+    <div id="ai-result-box" class="hidden w-full glass-card rounded-[24px] border border-white/60 shadow-lg p-6 analysis-result">
       <div id="ai-loading" class="flex items-center gap-3 text-slate-500">
-        <svg class="animate-spin w-5 h-5 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <svg class="animate-spin w-6 h-6 text-[#2D6A4F]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
         </svg>
-        <span>AI đang phân tích...</span>
+        <span class="font-bold text-[#2D6A4F]">AI đang phân tích mẫu lá...</span>
       </div>
       <div id="ai-result-content" class="hidden">
-        <div class="flex items-center gap-2 mb-3">
-          <div class="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
-            <i data-lucide="sparkles" class="w-4 h-4 text-purple-600"></i>
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#E6F2EB] to-[#CDE4D6] flex items-center justify-center shadow-inner">
+            <i data-lucide="microscope" class="w-5 h-5 text-[#2D6A4F]"></i>
           </div>
-          <h3 class="font-bold text-slate-800">Kết quả phân tích AI</h3>
+          <h3 class="font-bold font-sans text-lg text-[#1B4332]">Kết quả chẩn đoán</h3>
         </div>
-        <p id="ai-result-text" class="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap"></p>
+        <div class="bg-white/50 rounded-xl p-4 border border-white/40 shadow-inner">
+          <p id="ai-result-text" class="text-sm text-slate-700 font-medium leading-relaxed whitespace-pre-wrap"></p>
+        </div>
       </div>
     </div>
   </div>

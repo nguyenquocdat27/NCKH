@@ -1,33 +1,43 @@
 <!-- ========== CHỌN CHẾ ĐỘ ========== -->
-<div id="user-type-screen" class="page-content min-h-screen flex items-center justify-center p-4">
-  <div class="w-full max-w-md">
+<div id="user-type-screen" class="page-content min-h-screen relative flex items-center justify-center p-4 overflow-hidden">
+  
+  <!-- Background Image & Overlay -->
+  <div class="absolute inset-0 z-0">
+    <img src="assets/images/hero_chili_field.png" alt="Chili Field Background" class="w-full h-full object-cover animate-[sway_20s_ease-in-out_infinite]" />
+    <div class="absolute inset-0 bg-gradient-to-t from-[#2D6A4F]/95 via-[#2D6A4F]/70 to-transparent backdrop-blur-[2px]"></div>
+  </div>
+
+  <div class="w-full max-w-lg z-10 relative">
     <div class="text-center mb-10">
-      <div class="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center shadow-lg">
-        <i data-lucide="leaf" class="w-10 h-10 text-white"></i>
+      <div class="w-24 h-24 mx-auto mb-6 rounded-3xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-2xl border border-white/30 animate-float">
+        <i data-lucide="leaf" class="w-12 h-12 text-white"></i>
       </div>
-      <h1 class="text-3xl font-bold gradient-text">AI Nông Nghiệp</h1>
-      <p class="text-slate-500 mt-2">Chọn chế độ sử dụng</p>
+      <h1 class="text-4xl sm:text-5xl font-bold font-sans text-white tracking-wide drop-shadow-lg mb-3">AI Nông Nghiệp</h1>
+      <p class="text-green-50 text-lg font-medium drop-shadow-md">Khám phá và phục hồi sức khỏe cây trồng</p>
     </div>
     <div class="space-y-5">
-      <button type="button" onclick="selectUserType('personal')" class="card-hover w-full bg-white rounded-3xl p-6 border-2 border-transparent hover:border-green-200 text-left shadow-lg shadow-green-100/50 transition-all duration-300 group">
-        <div class="flex items-center gap-5">
-          <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-green-100 to-emerald-100 group-hover:from-green-500 group-hover:to-emerald-500 flex items-center justify-center transition-colors duration-300">
-            <i data-lucide="camera" class="w-8 h-8 text-green-600 group-hover:text-white transition-colors duration-300"></i>
+      <button type="button" onclick="selectUserType('personal')" class="card-hover w-full glass-card rounded-[32px] p-6 text-left transition-all duration-500 group relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-r from-white/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+        <div class="flex items-center gap-5 relative z-10">
+          <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#52B788] to-[#2D6A4F] flex items-center justify-center shadow-lg shadow-[#52B788]/30 group-hover:scale-110 transition-transform duration-500">
+            <i data-lucide="camera" class="w-8 h-8 text-white"></i>
           </div>
           <div>
-            <h3 class="text-lg font-bold text-slate-800">Người dùng cá nhân</h3>
-            <p class="text-sm text-slate-500">Chụp ảnh lá cây và AI sẽ phân tích tình trạng dinh dưỡng</p>
+            <h3 class="text-xl font-bold text-slate-800 font-sans mb-1 group-hover:text-[#2D6A4F] transition-colors">Người dùng cá nhân</h3>
+            <p class="text-sm text-slate-600 font-medium leading-relaxed">Chụp ảnh lá cây và AI sẽ phân tích tình trạng dinh dưỡng tức thì</p>
           </div>
         </div>
       </button>
-      <button type="button" onclick="selectUserType('pro')" class="card-hover w-full bg-white rounded-3xl p-6 border-2 border-transparent hover:border-blue-200 text-left shadow-lg shadow-blue-100/50 transition-all duration-300 group">
-        <div class="flex items-center gap-5">
-          <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-100 to-indigo-100 group-hover:from-blue-500 group-hover:to-indigo-500 flex items-center justify-center transition-colors duration-300">
-            <i data-lucide="bar-chart-3" class="w-8 h-8 text-blue-600 group-hover:text-white transition-colors duration-300"></i>
+      
+      <button type="button" onclick="selectUserType('pro')" class="card-hover w-full glass-card rounded-[32px] p-6 text-left transition-all duration-500 group relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-r from-white/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+        <div class="flex items-center gap-5 relative z-10">
+          <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#8B6914] to-[#B38C2A] flex items-center justify-center shadow-lg shadow-[#8B6914]/30 group-hover:scale-110 transition-transform duration-500">
+            <i data-lucide="bar-chart-3" class="w-8 h-8 text-white"></i>
           </div>
           <div>
-            <h3 class="text-lg font-bold text-slate-800">Người dùng chuyên nghiệp</h3>
-            <p class="text-sm text-slate-500">Truy cập dashboard quản lý và dữ liệu cảm biến</p>
+            <h3 class="text-xl font-bold text-slate-800 font-sans mb-1 group-hover:text-[#8B6914] transition-colors">Nhà nông & Chuyên gia</h3>
+            <p class="text-sm text-slate-600 font-medium leading-relaxed">Quản lý nhiều vườn, dữ liệu cảm biến IoT và lịch sử phân tích AI</p>
           </div>
         </div>
       </button>

@@ -6,6 +6,11 @@ server.py — Flask Backend chính (Modularized)
 
 from flask import Flask, render_template, send_from_directory
 from flask_cors import CORS
+import sys
+import codecs
+
+if sys.stdout.encoding != 'utf-8':
+    sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
 
 # Cấu hình database
 from database import DB_URI, init_db

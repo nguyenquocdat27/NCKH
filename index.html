@@ -10,8 +10,12 @@
   <link rel="stylesheet" href="style.css">
 </head>
 
-<body class="min-h-screen bg-gradient-to-br from-slate-50 to-slate-200">
-<div id="app">
+<body class="min-h-screen bg-pattern text-slate-800 relative overflow-x-hidden">
+<!-- Decorative Leaves -->
+<svg class="deco-leaf animate-float" style="top: 5%; left: 3%; width: 40px; height: 40px; fill: var(--color-leaf-light);" viewBox="0 0 24 24"><path d="M17 8C8 10 5 16 5 22C5 22 7 13 17 8Z"></path></svg>
+<svg class="deco-leaf animate-float-slow" style="top: 25%; right: 4%; width: 60px; height: 60px; fill: var(--color-leaf-dark); opacity: 0.1;" viewBox="0 0 24 24"><path d="M21 3C21 3 14 3 8 9C2 15 2 21 2 21C2 21 6 21 12 15C18 9 21 3 21 3Z"></path></svg>
+<svg class="deco-leaf animate-sway" style="bottom: 15%; left: 10%; width: 50px; height: 50px; fill: var(--color-earth); opacity: 0.08;" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 20C7.59 20 4 16.41 4 12C4 7.59 7.59 4 12 4C16.41 4 20 7.59 20 12C20 16.41 16.41 20 12 20Z"></path></svg>
+<div id="app" class="relative z-10">
 
 {% include 'pages/user-type.html' %}
 {% include 'pages/personal.html' %}
@@ -20,23 +24,24 @@
 
 <!-- ========== MAIN APP ========== -->
 <div id="main-app" class="hidden flex flex-col min-h-screen">
-  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  <header class="sticky top-0 z-40 liquid-glass-panel shadow-sm border-b-0">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16 lg:h-20">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center shadow-lg">
+          <div class="w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-gradient-to-br from-[#2D6A4F] to-[#52B788] flex items-center justify-center shadow-lg shadow-[#52b788]/30 border border-[#52b788]/50 relative overflow-hidden">
+            <div class="absolute inset-0 bg-white/20 opacity-0 hover:opacity-100 transition-opacity"></div>
             <i data-lucide="leaf" class="w-6 h-6 lg:w-7 lg:h-7 text-white"></i>
           </div>
           <div>
-            <h1 id="system-title" class="text-lg lg:text-xl font-bold gradient-text">AI trong Nông Nghiệp</h1>
-            <p class="text-xs text-slate-500 hidden sm:block">Phát hiện thiếu chất dinh dưỡng cây trồng</p>
+            <h1 id="system-title" class="text-lg lg:text-xl font-bold font-sans gradient-text tracking-wide">AI trong Nông Nghiệp</h1>
+            <p class="text-xs text-slate-500 hidden sm:block font-medium">Khám phá và phục hồi sức khỏe cây trồng</p>
           </div>
         </div>
         <div class="flex items-center gap-3">
-          <button id="mobile-menu-btn" class="lg:hidden p-2 rounded-lg hover:bg-slate-100 transition-colors" onclick="toggleMobileMenu()">
+          <button id="mobile-menu-btn" class="lg:hidden p-2 rounded-xl hover:bg-slate-100 transition-colors" onclick="toggleMobileMenu()">
             <i data-lucide="menu" class="w-6 h-6 text-slate-600"></i>
           </button>
-          <button id="logout-btn" class="px-3 sm:px-4 py-2 rounded-lg text-sm font-medium text-white bg-red-500 hover:bg-red-600 transition-colors flex items-center gap-2">
+          <button id="logout-btn" class="px-3 sm:px-4 py-2 rounded-xl text-sm font-medium text-white bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 shadow-md shadow-red-500/20 transition-all flex items-center gap-2 hover:-translate-y-0.5">
             <i data-lucide="log-out" class="w-4 h-4"></i>
             <span class="hidden sm:inline">Đăng xuất</span>
           </button>
@@ -45,28 +50,28 @@
     </div>
   </header>
 
-  <div id="nav-desktop" class="bg-white border-b border-slate-200 sticky top-16 z-30 hidden lg:block">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex overflow-x-auto gap-1 -mb-px">
-        <button class="nav-tab tab-active px-4 py-3 text-sm font-medium border-b-2 border-red-500 text-red-600 whitespace-nowrap transition-all" onclick="switchPage('dashboard')"><i data-lucide="layout-dashboard" class="w-4 h-4 inline mr-1"></i> Dashboard</button>
-        <button class="nav-tab tab-inactive px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-600 hover:text-red-600 whitespace-nowrap transition-all" onclick="switchPage('my-farms')"><i data-lucide="trees" class="w-4 h-4 inline mr-1"></i> Vườn của tôi</button>
-        <button class="nav-tab tab-inactive px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-600 hover:text-red-600 whitespace-nowrap transition-all" onclick="switchPage('esp32')"><i data-lucide="wifi" class="w-4 h-4 inline mr-1"></i> ESP32 &amp; Cảm biến</button>
-        <button class="nav-tab tab-inactive px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-600 hover:text-red-600 whitespace-nowrap transition-all" onclick="switchPage('camera')"><i data-lucide="video" class="w-4 h-4 inline mr-1"></i> Camera</button>
-        <button class="nav-tab tab-inactive px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-600 hover:text-red-600 whitespace-nowrap transition-all" onclick="switchPage('upload')"><i data-lucide="sparkles" class="w-4 h-4 inline mr-1"></i> Tải ảnh &amp; Quét AI</button>
-        <button class="nav-tab tab-inactive px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-600 hover:text-red-600 whitespace-nowrap transition-all" onclick="switchPage('guide')"><i data-lucide="book-open" class="w-4 h-4 inline mr-1"></i> Hướng dẫn</button>
-        <button class="nav-tab tab-inactive px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-600 hover:text-red-600 whitespace-nowrap transition-all" onclick="switchPage('research')"><i data-lucide="file-text" class="w-4 h-4 inline mr-1"></i> Nghiên cứu</button>
+  <div id="nav-desktop" class="liquid-glass-panel sticky top-[72px] z-30 hidden lg:block mx-auto max-w-5xl mt-4 rounded-2xl">
+    <div class="px-2">
+      <div class="flex overflow-x-auto gap-1 p-2">
+        <button class="nav-tab tab-active px-5 py-2.5 rounded-xl text-sm font-bold bg-[#2D6A4F] text-white shadow-md transition-all flex items-center" onclick="switchPage('dashboard')"><i data-lucide="layout-dashboard" class="w-4 h-4 mr-2"></i> Dashboard</button>
+        <button class="nav-tab tab-inactive px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:text-[#2D6A4F] hover:bg-white/60 transition-all flex items-center" onclick="switchPage('my-farms')"><i data-lucide="trees" class="w-4 h-4 mr-2"></i> Vườn của tôi</button>
+        <button class="nav-tab tab-inactive px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:text-[#2D6A4F] hover:bg-white/60 transition-all flex items-center" onclick="switchPage('esp32')"><i data-lucide="wifi" class="w-4 h-4 mr-2"></i> Cảm biến & IoT</button>
+        <button class="nav-tab tab-inactive px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:text-[#2D6A4F] hover:bg-white/60 transition-all flex items-center" onclick="switchPage('camera')"><i data-lucide="video" class="w-4 h-4 mr-2"></i> Camera Giám sát</button>
+        <button class="nav-tab tab-inactive px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:text-[#2D6A4F] hover:bg-white/60 transition-all flex items-center" onclick="switchPage('upload')"><i data-lucide="sparkles" class="w-4 h-4 mr-2"></i> Chẩn đoán AI</button>
+        <button class="nav-tab tab-inactive px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:text-[#2D6A4F] hover:bg-white/60 transition-all flex items-center" onclick="switchPage('guide')"><i data-lucide="book-open" class="w-4 h-4 mr-2"></i> Hướng dẫn</button>
+        <button class="nav-tab tab-inactive px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:text-[#2D6A4F] hover:bg-white/60 transition-all flex items-center" onclick="switchPage('research')"><i data-lucide="leaf" class="w-4 h-4 mr-2"></i> Thư viện Nông nghiệp</button>
       </div>
     </div>
   </div>
 
   <div id="mobile-menu-overlay" class="fixed inset-0 z-40 hidden bg-black/50 backdrop-blur-sm" onclick="toggleMobileMenu()"></div>
   <div id="mobile-menu-panel" class="fixed left-0 top-0 bottom-0 z-50 w-4/5 sm:w-72 bg-white shadow-2xl flex flex-col overflow-hidden lg:hidden">
-    <div class="flex items-center justify-between p-4 sm:p-6 border-b border-slate-200 bg-gradient-to-r from-red-50 to-orange-50">
-      <h2 class="font-bold text-lg text-slate-800 flex items-center gap-2"><i data-lucide="menu" class="w-6 h-6 text-red-600"></i>Menu</h2>
+    <div class="flex items-center justify-between p-4 sm:p-6 border-b border-slate-200 bg-gradient-to-r from-[#F4F9F4] to-[#E6F2EB]">
+      <h2 class="font-bold font-sans text-lg text-slate-800 flex items-center gap-2"><i data-lucide="leaf" class="w-6 h-6 text-[#52B788]"></i>Menu</h2>
       <button onclick="toggleMobileMenu()" class="p-2 hover:bg-white rounded-lg transition-colors"><i data-lucide="x" class="w-6 h-6 text-slate-600"></i></button>
     </div>
     <nav class="flex-1 overflow-y-auto p-2 sm:p-4 space-y-1">
-      <button class="mobile-nav-item w-full text-left px-5 py-4 rounded-xl font-semibold bg-red-50 border-l-4 border-red-500 text-slate-800 transition-all flex items-center gap-3" onclick="switchPageMobile('dashboard')"><i data-lucide="layout-dashboard" class="w-5 h-5 text-red-600"></i><span>Dashboard</span></button>
+      <button class="mobile-nav-item w-full text-left px-5 py-4 rounded-xl font-semibold bg-[#F4F9F4] border-l-4 border-[#52B788] text-slate-800 transition-all flex items-center gap-3" onclick="switchPageMobile('dashboard')"><i data-lucide="layout-dashboard" class="w-5 h-5 text-[#2D6A4F]"></i><span>Dashboard</span></button>
       <button class="mobile-nav-item w-full text-left px-5 py-4 rounded-xl font-medium text-slate-600 hover:bg-slate-50 transition-all flex items-center gap-3" onclick="switchPageMobile('my-farms')"><i data-lucide="trees" class="w-5 h-5 text-emerald-500"></i><span>Vườn của tôi</span></button>
       <div class="px-3 py-4 text-xs font-semibold text-slate-500 uppercase">📊 Cảm biến hiện tại</div>
       <div class="px-5 py-3 bg-slate-50 rounded-lg space-y-2 text-sm">
@@ -88,7 +93,7 @@
   </div>
 
   <main class="flex-1 overflow-y-auto">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
       {% include 'pages/dashboard.html' %}
       {% include 'pages/my-farms.html' %}
       {% include 'pages/esp32.html' %}
