@@ -30,9 +30,7 @@ const int DRY_VALUE_ADC = 3500;
 const int WET_VALUE_ADC = 1200;  
 
 // Biến điều khiển nhận từ Server phản hồi
-bool manualControl = false;  // false = Tự động, true = Thủ công từ web
-bool manualFanState = false; // Trạng thái quạt do người dùng bấm trên web (true = bật)
-bool manualPumpState = false; // Trạng thái bơm nước (true = bật)
+// (Đã loại bỏ tính năng bật tắt thủ công theo yêu cầu)
 
 // ==========================================
 // CẤU HÌNH SERVER KẾT NỐI
@@ -48,10 +46,10 @@ void setup() {
 
   // KHỞI TẠO CHÂN ĐIỀU KHIỂN QUẠT VÀ BƠM
   pinMode(FAN_PIN, OUTPUT);
-  digitalWrite(FAN_PIN, HIGH); // Mặc định tắt quạt ban đầu (Active Low - HIGH là TẮT)
+  digitalWrite(FAN_PIN, LOW); // Mặc định tắt quạt ban đầu (Active High - LOW là TẮT)
   
   pinMode(PUMP_PIN, OUTPUT);
-  digitalWrite(PUMP_PIN, HIGH); // Mặc định tắt bơm ban đầu
+  digitalWrite(PUMP_PIN, LOW); // Mặc định tắt bơm ban đầu
 
   // Khởi tạo DS18B20
   ds18b20.begin();
@@ -133,12 +131,7 @@ void loop() {
       DeserializationError error = deserializeJson(responseDoc, response);
       
       if (!error) {
-        // Kiểm tra xem server có gửi đủ các trường dữ liệu điều khiển không
-        if (responseDoc.containsKey("manual")) {
-          manualControl = responseDoc["manual"].as<bool>();
-          manualFanState = responseDoc["fan_state"].as<bool>();
-          manualPumpState = responseDoc["pump_state"].as<bool>();
-        }
+        // Có thể mở rộng lấy cấu hình khác từ server ở đây
       }
     } else {
       Serial.print("Lỗi kết nối POST. Mã lỗi: "); Serial.println(httpResponseCode);
@@ -149,52 +142,29 @@ void loop() {
   }
 
   // ==========================================
-  // 3. LOGIC ĐIỀU KHIỂN QUẠT & BƠM (TỰ ĐỘNG / THỦ CÔNG)
+  // 3. LOGIC ĐIỀU KHIỂN QUẠT & BƠM (TỰ ĐỘNG)
   // ==========================================
-  if (manualControl) {
-    // CHẾ ĐỘ THỦ CÔNG: Ưu tiên tuyệt đối lệnh bấm nút từ Giao diện Web
-    Serial.println("⚙️ [CHẾ ĐỘ] -> THỦ CÔNG (Nghe theo nút nhấn trên Web)");
-    
-    // Điều khiển Quạt
-    if (manualFanState) {
-      digitalWrite(FAN_PIN, LOW);  // Mức THẤP (LOW) là BẬT quạt
-      Serial.println("💨 [QUẠT] -> ĐÃ BẬT THỦ CÔNG");
-    } else {
-      digitalWrite(FAN_PIN, HIGH); // Mức CAO (HIGH) là TẮT quạt
-      Serial.println("🛑 [QUẠT] -> ĐÃ TẮT THỦ CÔNG");
-    }
-    
-    // Điều khiển Bơm
-    if (manualPumpState) {
-      digitalWrite(PUMP_PIN, LOW);
-      Serial.println("💦 [BƠM] -> ĐÃ BẬT THỦ CÔNG");
-    } else {
-      digitalWrite(PUMP_PIN, HIGH);
-      Serial.println("🛑 [BƠM] -> ĐÃ TẮT THỦ CÔNG");
-    }
-  } 
-  else {
-    // CHẾ ĐỘ TỰ ĐỘNG: Tự xử lý dựa trên cảm biến nhiệt độ & độ ẩm
-    Serial.println("🤖 [CHẾ ĐỘ] -> TỰ ĐỘNG (Dựa theo cảm biến)");
-    
-    // Quạt: Tự động bật khi > 30 độ
-    if (temperature > 30.0) {
-      digitalWrite(FAN_PIN, LOW);  // LOW để BẬT quạt
-      Serial.println("💨 [QUẠT] -> TỰ ĐỘNG BẬT (Nhiệt độ > 30°C)");
-    } else {
-      digitalWrite(FAN_PIN, HIGH); // HIGH để TẮT quạt
-      Serial.println("🛑 [QUẠT] -> TỰ ĐỘNG TẮT (Nhiệt độ <= 30°C)");
-    }
-    
-    // Bơm: Tự động tưới khi Độ ẩm đất < 50%
-    if (humidity < 50) {
-      digitalWrite(PUMP_PIN, LOW); // LOW để BẬT bơm
-      Serial.println("💦 [BƠM] -> TỰ ĐỘNG BẬT (Độ ẩm đất < 50%)");
-    } else {
-      digitalWrite(PUMP_PIN, HIGH); // HIGH để TẮT bơm
-      Serial.println("🛑 [BƠM] -> TỰ ĐỘNG TẮT (Độ ẩm đất >= 50%)");
-    }
+  
+  Serial.println("🤖 [CHẾ ĐỘ] -> TỰ ĐỘNG (Dựa theo cảm biến)");
+  
+  // Quạt: Tự động bật khi > 30 độ
+  if (temperature > 30.0) {
+    digitalWrite(FAN_PIN, HIGH);  // HIGH để BẬT quạt
+    Serial.println("💨 [QUẠT] -> TỰ ĐỘNG BẬT (Nhiệt độ > 30°C)");
+  } else {
+    digitalWrite(FAN_PIN, LOW); // LOW để TẮT quạt
+    Serial.println("🛑 [QUẠT] -> TỰ ĐỘNG TẮT (Nhiệt độ <= 30°C)");
   }
+  
+  // Bơm: Tự động tưới khi Độ ẩm đất < 50%
+  if (humidity < 50) {
+    digitalWrite(PUMP_PIN, HIGH); // HIGH để BẬT bơm
+    Serial.println("💦 [BƠM] -> TỰ ĐỘNG BẬT (Độ ẩm đất < 50%)");
+  } else {
+    digitalWrite(PUMP_PIN, LOW); // LOW để TẮT bơm
+    Serial.println("🛑 [BƠM] -> TỰ ĐỘNG TẮT (Độ ẩm đất >= 50%)");
+  }
+
   Serial.println("=======================");
 
   // Thực hiện lại chu kỳ sau mỗi 5 giây

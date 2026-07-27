@@ -23,62 +23,16 @@
               </div>
             </div>
 
-            <!-- Bảng Điều Khiển Thiết Bị (Quạt & Bơm) -->
+            <!-- Nhật ký Hoạt động Thiết bị -->
             <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm mt-4">
               <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                <i data-lucide="cpu" class="w-5 h-5 text-red-500"></i> Điều khiển Thiết bị
+                <i data-lucide="activity" class="w-5 h-5 text-indigo-500"></i> Nhật ký hoạt động
               </h3>
               
-              <!-- Chế độ hoạt động -->
-              <div class="p-4 bg-slate-50 rounded-xl mb-4">
-                <div class="flex items-center justify-between">
-                  <div>
-                    <span class="block text-sm font-semibold text-slate-700">Chế độ điều khiển</span>
-                    <span id="mode-status-text" class="text-xs text-slate-500 font-medium">Đang tải...</span>
-                  </div>
-                  <!-- Custom Toggle Switch -->
-                  <label class="relative inline-flex items-center cursor-pointer select-none">
-                    <input type="checkbox" id="mode-toggle" class="sr-only peer" onchange="toggleControlMode(this.checked)">
-                    <div class="w-14 h-7 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-red-500 peer-checked:to-orange-500 shadow-inner"></div>
-                  </label>
-                </div>
-                <div class="flex justify-between mt-2 text-xs font-bold text-slate-400">
-                  <span id="label-auto" class="text-red-500">TỰ ĐỘNG</span>
-                  <span id="label-manual">THỦ CÔNG</span>
-                </div>
-              </div>
-
-              <!-- Trạng thái quạt & Bơm -->
-              <div class="space-y-4">
-                <!-- Điều khiển Quạt -->
-                <div class="p-4 bg-slate-50 rounded-xl border border-slate-150">
-                  <div class="flex justify-between items-center mb-2">
-                    <span class="text-sm font-semibold text-slate-700">Quạt gió (Relay 1)</span>
-                    <span id="fan-status-badge" class="text-xs px-2 py-0.5 rounded-full font-bold bg-slate-200 text-slate-600">Đang tải...</span>
-                  </div>
-                  <button id="fan-btn" onclick="toggleDeviceState('fan')" class="w-full py-3 rounded-xl font-bold text-white transition-all duration-300 shadow-md flex items-center justify-center gap-3 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed">
-                    <i id="fan-icon" data-lucide="fan" class="w-5 h-5"></i>
-                    <span id="fan-btn-text">ĐANG TẢI...</span>
-                  </button>
-                  <p id="fan-auto-note" class="text-[11px] text-slate-400 mt-2 italic hidden">
-                    * Tự động bật khi Nhiệt độ &gt; 30°C.
-                  </p>
-                </div>
-
-                <!-- Điều khiển Bơm nước -->
-                <div class="p-4 bg-slate-50 rounded-xl border border-slate-150">
-                  <div class="flex justify-between items-center mb-2">
-                    <span class="text-sm font-semibold text-slate-700">Mạch Bơm nước (Relay 2)</span>
-                    <span id="pump-status-badge" class="text-xs px-2 py-0.5 rounded-full font-bold bg-slate-200 text-slate-600">Đang tải...</span>
-                  </div>
-                  <button id="pump-btn" onclick="toggleDeviceState('pump')" class="w-full py-3 rounded-xl font-bold text-white transition-all duration-300 shadow-md flex items-center justify-center gap-3 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed">
-                    <i id="pump-icon" data-lucide="droplets" class="w-5 h-5"></i>
-                    <span id="pump-btn-text">ĐANG TẢI...</span>
-                  </button>
-                  <p id="pump-auto-note" class="text-[11px] text-slate-400 mt-2 italic hidden">
-                    * Tự động tưới khi Độ ẩm đất &lt; 50%.
-                  </p>
-                </div>
+              <div class="overflow-y-auto max-h-[300px] pr-2">
+                <ul id="device-history-list" class="space-y-3">
+                  <li class="text-sm text-slate-400 italic text-center py-4">Chưa có dữ liệu hoạt động</li>
+                </ul>
               </div>
             </div>
           </div>

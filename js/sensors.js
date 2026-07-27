@@ -174,166 +174,78 @@ window.fetchDeviceControlState = async function(vuonId) {
   }
 }
 
+window.deviceStateHistory = [];
+
 window.updateControlUI = function(state) {
-  const toggle = document.getElementById('mode-toggle');
-  const modeText = document.getElementById('mode-status-text');
-  const labelAuto = document.getElementById('label-auto');
-  const labelManual = document.getElementById('label-manual');
+  const historyList = document.getElementById('device-history-list');
+  if (!historyList) return;
 
-  // Nút Quạt
-  const fanBtn = document.getElementById('fan-btn');
-  const fanBtnText = document.getElementById('fan-btn-text');
-  const fanBadge = document.getElementById('fan-status-badge');
-  const fanIcon = document.getElementById('fan-icon');
-  const fanNote = document.getElementById('fan-auto-note');
-
-  // Nút Bơm
-  const pumpBtn = document.getElementById('pump-btn');
-  const pumpBtnText = document.getElementById('pump-btn-text');
-  const pumpBadge = document.getElementById('pump-status-badge');
-  const pumpIcon = document.getElementById('pump-icon');
-  const pumpNote = document.getElementById('pump-auto-note');
-
-  if (!toggle) return; // Bảo vệ nếu HTML chưa load xong
-
-  // 1. Chế độ điều khiển
-  toggle.checked = state.manual;
-  window.currentDeviceState = state;
-
-  if (state.manual) {
-    modeText.textContent = "Chế độ: THỦ CÔNG";
-    labelManual.classList.add('text-red-500');
-    labelManual.classList.remove('text-slate-400');
-    labelAuto.classList.remove('text-red-500');
-    labelAuto.classList.add('text-slate-400');
-    
-    // Mở khóa các nút điều khiển
-    fanBtn.disabled = false;
-    pumpBtn.disabled = false;
-
-    fanNote.classList.add('hidden');
-    pumpNote.classList.add('hidden');
-  } else {
-    modeText.textContent = "Chế độ: TỰ ĐỘNG (Auto)";
-    labelAuto.classList.add('text-red-500');
-    labelAuto.classList.remove('text-slate-400');
-    labelManual.classList.remove('text-red-500');
-    labelManual.classList.add('text-slate-400');
-
-    // Khóa các nút điều khiển
-    fanBtn.disabled = true;
-    pumpBtn.disabled = true;
-
-    fanNote.classList.remove('hidden');
-    pumpNote.classList.remove('hidden');
+  // Nếu là lần đầu tiên tải, khởi tạo trạng thái hiện tại
+  if (window.currentDeviceState.fan_state === undefined) {
+    window.currentDeviceState = { ...state };
+    return; // Bỏ qua lần đầu không ghi log
   }
 
-  // 2. Cập nhật giao diện Quạt (Relay 1)
-  if (state.fan_state) {
-    fanBadge.textContent = "BẬT";
-    fanBadge.className = "text-xs px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-600";
-    fanBtnText.textContent = state.manual ? "TẮT QUẠT GIÓ" : "TỰ ĐỘNG: BẬT";
-    
-    // Gradient màu xanh active
-    fanBtn.className = "w-full py-3 rounded-xl font-bold text-white transition-all duration-300 shadow-md flex items-center justify-center gap-3 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-emerald-100";
-    fanIcon.className = "w-5 h-5 animate-spin-fast";
-  } else {
-    fanBadge.textContent = "TẮT";
-    fanBadge.className = "text-xs px-2 py-0.5 rounded-full font-bold bg-rose-100 text-rose-600";
-    fanBtnText.textContent = state.manual ? "BẬT QUẠT GIÓ" : "TỰ ĐỘNG: TẮT";
-    
-    // Gradient màu đỏ inactive
-    fanBtn.className = "w-full py-3 rounded-xl font-bold text-white transition-all duration-300 shadow-md flex items-center justify-center gap-3 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed bg-gradient-to-r from-rose-500 to-red-500 hover:from-rose-600 hover:to-red-600 shadow-rose-100";
-    fanIcon.className = "w-5 h-5";
+  // Kiểm tra sự thay đổi của Quạt
+  if (state.fan_state !== window.currentDeviceState.fan_state) {
+    logDeviceActivity('fan', state.fan_state);
   }
 
-  // 3. Cập nhật giao diện Bơm (Relay 2)
-  if (state.pump_state) {
-    pumpBadge.textContent = "BẬT";
-    pumpBadge.className = "text-xs px-2 py-0.5 rounded-full font-bold bg-blue-100 text-blue-600";
-    pumpBtnText.textContent = state.manual ? "TẮT BƠM NƯỚC" : "TỰ ĐỘNG: BẬT";
-    
-    // Gradient màu xanh dương active
-    pumpBtn.className = "w-full py-3 rounded-xl font-bold text-white transition-all duration-300 shadow-md flex items-center justify-center gap-3 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 shadow-blue-100";
-    pumpIcon.className = "w-5 h-5 animate-pulse-blue";
-  } else {
-    pumpBadge.textContent = "TẮT";
-    pumpBadge.className = "text-xs px-2 py-0.5 rounded-full font-bold bg-rose-100 text-rose-600";
-    pumpBtnText.textContent = state.manual ? "BẬT BƠM NƯỚC" : "TỰ ĐỘNG: TẮT";
-    
-    // Gradient màu đỏ inactive
-    pumpBtn.className = "w-full py-3 rounded-xl font-bold text-white transition-all duration-300 shadow-md flex items-center justify-center gap-3 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed bg-gradient-to-r from-rose-500 to-red-500 hover:from-rose-600 hover:to-red-600 shadow-rose-100";
-    pumpIcon.className = "w-5 h-5";
+  // Kiểm tra sự thay đổi của Bơm
+  if (state.pump_state !== window.currentDeviceState.pump_state) {
+    logDeviceActivity('pump', state.pump_state);
   }
+
+  // Cập nhật trạng thái hiện tại
+  window.currentDeviceState = { ...state };
 }
 
-window.toggleControlMode = async function(isManual) {
-  if (!selectedFarmId) {
-    showToast("❌ Vui lòng chọn vườn trước khi đổi chế độ!");
-    document.getElementById('mode-toggle').checked = !isManual;
-    return;
+function logDeviceActivity(device, isON) {
+  const historyList = document.getElementById('device-history-list');
+  if (!historyList) return;
+  
+  // Xóa dòng "Chưa có dữ liệu" nếu có
+  if (historyList.querySelector('li.italic')) {
+    historyList.innerHTML = '';
   }
 
-  try {
-    const res = await fetch('/api/control', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        vuon_id: selectedFarmId,
-        manual: isManual
-      })
-    });
-    const result = await res.json();
-    if (result.success) {
-      showToast(`⚡ Đã chuyển sang chế độ: ${isManual ? 'THỦ CÔNG' : 'TỰ ĐỘNG'}`);
-      await window.fetchDeviceControlState(selectedFarmId);
-    } else {
-      throw new Error(result.error);
-    }
-  } catch (err) {
-    console.error("Lỗi khi chuyển đổi chế độ:", err);
-    showToast("❌ Lỗi cấu hình chế độ điều khiển");
-    document.getElementById('mode-toggle').checked = !isManual;
+  const now = new Date();
+  const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+  const dateStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth()+1).padStart(2, '0')}`;
+  
+  let deviceName = device === 'fan' ? 'Quạt gió' : 'Máy Bơm';
+  let icon = device === 'fan' ? 'fan' : 'droplets';
+  let colorClass = isON ? 'text-emerald-500' : 'text-rose-500';
+  let bgClass = isON ? 'bg-emerald-50 border-emerald-100' : 'bg-rose-50 border-rose-100';
+  let actionText = isON ? 'ĐÃ BẬT' : 'ĐÃ TẮT';
+
+  const li = document.createElement('li');
+  li.className = `p-3 rounded-xl border ${bgClass} flex items-center justify-between transition-all`;
+  li.innerHTML = `
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm">
+        <i data-lucide="${icon}" class="w-4 h-4 ${colorClass}"></i>
+      </div>
+      <div>
+        <p class="text-sm font-semibold text-slate-700">${deviceName}</p>
+        <p class="text-xs font-bold ${colorClass}">${actionText}</p>
+      </div>
+    </div>
+    <div class="text-right">
+      <p class="text-xs font-bold text-slate-600">${timeStr}</p>
+      <p class="text-[10px] text-slate-400">${dateStr}</p>
+    </div>
+  `;
+  
+  // Thêm vào đầu danh sách
+  historyList.prepend(li);
+  
+  // Giới hạn 20 dòng
+  if (historyList.children.length > 20) {
+    historyList.removeChild(historyList.lastChild);
   }
-}
-
-window.toggleDeviceState = async function(deviceType) {
-  if (!selectedFarmId) {
-    showToast("❌ Vui lòng chọn một vườn!");
-    return;
-  }
-
-  if (!window.currentDeviceState || !window.currentDeviceState.manual) {
-    showToast("⚠️ Vui lòng chuyển chế độ sang THỦ CÔNG để điều khiển!");
-    return;
-  }
-
-  try {
-    const payload = { vuon_id: selectedFarmId };
-    if (deviceType === 'fan') {
-      payload.fan_state = !window.currentDeviceState.fan_state;
-    } else if (deviceType === 'pump') {
-      payload.pump_state = !window.currentDeviceState.pump_state;
-    }
-
-    const res = await fetch('/api/control', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-    const result = await res.json();
-    
-    if (result.success) {
-      const stateLabel = payload.fan_state !== undefined 
-        ? (payload.fan_state ? 'Bật Quạt' : 'Tắt Quạt') 
-        : (payload.pump_state ? 'Bật Bơm' : 'Tắt Bơm');
-      showToast(`✅ Đã gửi lệnh: ${stateLabel}`);
-      await window.fetchDeviceControlState(selectedFarmId);
-    } else {
-      throw new Error(result.error);
-    }
-  } catch (err) {
-    console.error("Lỗi khi chuyển trạng thái thiết bị:", err);
-    showToast("❌ Lỗi điều khiển thiết bị!");
+  
+  if (window.lucide) {
+    lucide.createIcons();
   }
 }
