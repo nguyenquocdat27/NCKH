@@ -157,3 +157,29 @@ def update_control_state():
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
+
+@sensors_bp.route('/device_history/<int:vuon_id>', methods=['GET'])
+def get_device_last_active(vuon_id):
+    """Lấy thời điểm cuối cùng thiết bị hoạt động dựa trên cảm biến"""
+    try:
+        last_fan = SensorData.query.filter(SensorData.vuon_id == vuon_id, SensorData.temperature > 30.0)\
+                                   .order_by(SensorData.timestamp.desc()).first()
+        last_pump = SensorData.query.filter(SensorData.vuon_id == vuon_id, SensorData.humidity < 50.0)\
+                                    .order_by(SensorData.timestamp.desc()).first()
+        latest_record = SensorData.query.filter(SensorData.vuon_id == vuon_id)\
+                                        .order_by(SensorData.timestamp.desc()).first()
+                                   
+        is_offline = True
+        if latest_record:
+            # So sánh thời gian (UTC)
+            diff = (datetime.utcnow() - latest_record.timestamp).total_seconds()
+            is_offline = diff > 15
+
+        return jsonify({
+            "last_fan_on": last_fan.timestamp.isoformat() + 'Z' if last_fan else None,
+            "last_pump_on": last_pump.timestamp.isoformat() + 'Z' if last_pump else None,
+            "is_offline": is_offline,
+            "last_seen": latest_record.timestamp.isoformat() + 'Z' if latest_record else None
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

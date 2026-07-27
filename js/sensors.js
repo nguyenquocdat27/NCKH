@@ -35,9 +35,26 @@ window.fetchAndUpdateSensors = async function() {
       lEl.textContent = (latest.light !== null && latest.light >= 0) ? `${latest.light.toFixed(0)} lux` : '--';
     }
 
+    // Cập nhật Bảng lịch sử cảm biến
     renderSensorHistoryTable(history);
+    
+    // Lấy lịch sử hoạt động thiết bị (Quạt/Bơm) từ backend
+    fetchDeviceHistory();
   } catch (e) {
     console.error("Lỗi lấy dữ liệu sensors:", e);
+  }
+}
+
+async function fetchDeviceHistory() {
+  if (!selectedFarmId) return;
+  try {
+    const res = await fetch(`/api/device_history/${selectedFarmId}`);
+    const data = await res.json();
+    if (!data.error) {
+      updateDeviceHistoryUI(data);
+    }
+  } catch(e) {
+    console.error("Lỗi lấy lịch sử thiết bị:", e);
   }
 }
 
@@ -177,75 +194,114 @@ window.fetchDeviceControlState = async function(vuonId) {
 window.deviceStateHistory = [];
 
 window.updateControlUI = function(state) {
-  const historyList = document.getElementById('device-history-list');
-  if (!historyList) return;
-
-  // Nếu là lần đầu tiên tải, khởi tạo trạng thái hiện tại
-  if (window.currentDeviceState.fan_state === undefined) {
-    window.currentDeviceState = { ...state };
-    return; // Bỏ qua lần đầu không ghi log
-  }
-
-  // Kiểm tra sự thay đổi của Quạt
-  if (state.fan_state !== window.currentDeviceState.fan_state) {
-    logDeviceActivity('fan', state.fan_state);
-  }
-
-  // Kiểm tra sự thay đổi của Bơm
-  if (state.pump_state !== window.currentDeviceState.pump_state) {
-    logDeviceActivity('pump', state.pump_state);
-  }
-
-  // Cập nhật trạng thái hiện tại
-  window.currentDeviceState = { ...state };
+  // Không cần làm gì nữa vì đã dùng fetchDeviceHistory để cập nhật UI
 }
 
-function logDeviceActivity(device, isON) {
+function updateDeviceHistoryUI(data) {
   const historyList = document.getElementById('device-history-list');
   if (!historyList) return;
   
-  // Xóa dòng "Chưa có dữ liệu" nếu có
-  if (historyList.querySelector('li.italic')) {
-    historyList.innerHTML = '';
+  historyList.innerHTML = '';
+  
+  // Trạng thái ESP32
+  const statusLi = document.createElement('li');
+  const isOnline = !data.is_offline;
+  statusLi.className = `p-3 rounded-xl border ${isOnline ? 'bg-emerald-50 border-emerald-100' : 'bg-slate-50 border-slate-200'} flex items-center justify-between transition-all`;
+  
+  // Format last seen
+  let lastSeenStr = 'Chưa có dữ liệu';
+  if (data.last_seen) {
+     const d = new Date(data.last_seen);
+     lastSeenStr = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
   }
 
-  const now = new Date();
-  const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-  const dateStr = `${String(now.getDate()).padStart(2, '0')}/${String(now.getMonth()+1).padStart(2, '0')}`;
-  
-  let deviceName = device === 'fan' ? 'Quạt gió' : 'Máy Bơm';
-  let icon = device === 'fan' ? 'fan' : 'droplets';
-  let colorClass = isON ? 'text-emerald-500' : 'text-rose-500';
-  let bgClass = isON ? 'bg-emerald-50 border-emerald-100' : 'bg-rose-50 border-rose-100';
-  let actionText = isON ? 'ĐÃ BẬT' : 'ĐÃ TẮT';
-
-  const li = document.createElement('li');
-  li.className = `p-3 rounded-xl border ${bgClass} flex items-center justify-between transition-all`;
-  li.innerHTML = `
+  statusLi.innerHTML = `
     <div class="flex items-center gap-3">
       <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm">
-        <i data-lucide="${icon}" class="w-4 h-4 ${colorClass}"></i>
+        <i data-lucide="wifi" class="w-4 h-4 ${isOnline ? 'text-emerald-500' : 'text-slate-500'}"></i>
       </div>
       <div>
-        <p class="text-sm font-semibold text-slate-700">${deviceName}</p>
-        <p class="text-xs font-bold ${colorClass}">${actionText}</p>
+        <p class="text-sm font-semibold text-slate-700">Trạng thái ESP32</p>
+        <p class="text-xs font-bold ${isOnline ? 'text-emerald-500' : 'text-slate-500'}">${isOnline ? '✓ Đang hoạt động' : '✗ Ngoại tuyến'}</p>
       </div>
     </div>
     <div class="text-right">
-      <p class="text-xs font-bold text-slate-600">${timeStr}</p>
-      <p class="text-[10px] text-slate-400">${dateStr}</p>
+      <p class="text-xs font-bold text-slate-600">${isOnline ? 'Hiện tại' : lastSeenStr}</p>
+      <p class="text-[10px] text-slate-400">Lần cuối</p>
     </div>
   `;
-  
-  // Thêm vào đầu danh sách
-  historyList.prepend(li);
-  
-  // Giới hạn 20 dòng
-  if (historyList.children.length > 20) {
-    historyList.removeChild(historyList.lastChild);
+  historyList.appendChild(statusLi);
+
+  // Quạt gió
+  let fanTimeStr = 'Chưa từng chạy';
+  let fanDateStr = '';
+  if (data.last_fan_on) {
+     const d = new Date(data.last_fan_on);
+     fanTimeStr = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+     fanDateStr = d.toLocaleDateString();
   }
+  const fanLi = document.createElement('li');
+  fanLi.className = `p-3 rounded-xl border bg-cyan-50 border-cyan-100 flex items-center justify-between transition-all mt-3`;
+  fanLi.innerHTML = `
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm">
+        <i data-lucide="fan" class="w-4 h-4 text-cyan-500"></i>
+      </div>
+      <div>
+        <p class="text-sm font-semibold text-slate-700">Quạt gió (Giảm nhiệt)</p>
+        <p class="text-xs font-bold text-cyan-500">Lần cuối > 30°C</p>
+      </div>
+    </div>
+    <div class="text-right">
+      <p class="text-xs font-bold text-slate-600">${fanTimeStr}</p>
+      <p class="text-[10px] text-slate-400">${fanDateStr}</p>
+    </div>
+  `;
+  historyList.appendChild(fanLi);
+
+  // Máy bơm
+  let pumpTimeStr = 'Chưa từng chạy';
+  let pumpDateStr = '';
+  if (data.last_pump_on) {
+     const d = new Date(data.last_pump_on);
+     pumpTimeStr = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+     pumpDateStr = d.toLocaleDateString();
+  }
+  const pumpLi = document.createElement('li');
+  pumpLi.className = `p-3 rounded-xl border bg-blue-50 border-blue-100 flex items-center justify-between transition-all mt-3`;
+  pumpLi.innerHTML = `
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm">
+        <i data-lucide="droplets" class="w-4 h-4 text-blue-500"></i>
+      </div>
+      <div>
+        <p class="text-sm font-semibold text-slate-700">Máy bơm (Tưới ẩm)</p>
+        <p class="text-xs font-bold text-blue-500">Lần cuối < 50%</p>
+      </div>
+    </div>
+    <div class="text-right">
+      <p class="text-xs font-bold text-slate-600">${pumpTimeStr}</p>
+      <p class="text-[10px] text-slate-400">${pumpDateStr}</p>
+    </div>
+  `;
+  historyList.appendChild(pumpLi);
   
   if (window.lucide) {
     lucide.createIcons();
   }
+  
+  // Cập nhật nhãn Online/Offline
+  const badges = ['badge-temp', 'badge-hum', 'badge-light'];
+  badges.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+       if (isOnline) {
+          el.className = "text-sm font-semibold text-teal-600 bg-teal-50 px-2 py-1 rounded-full";
+          el.textContent = "✓ Online";
+       } else {
+          el.className = "text-sm font-semibold text-rose-600 bg-rose-50 px-2 py-1 rounded-full";
+          el.textContent = "✗ Ngoại tuyến";
+       }
+    }
+  });
 }
