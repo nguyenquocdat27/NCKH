@@ -14,10 +14,7 @@ function showScreen(screenId) {
   }
 }
 
-let isAnimatingPage = false;
-
 function switchPage(page) {
-  if (isAnimatingPage) return;
   const targetPage = document.getElementById(page + '-page');
   if (!targetPage) return;
 
@@ -34,40 +31,27 @@ function switchPage(page) {
     }
   }
 
-  // Find currently visible page
-  let currentPage = null;
+  // Ẩn tất cả các trang khác ngay lập tức để tránh lỗi chồng chéo giao diện
   document.querySelectorAll('[id$="-page"]').forEach(el => {
-    if (!el.classList.contains('hidden')) currentPage = el;
+    if (el !== targetPage) {
+      el.classList.add('hidden');
+      el.classList.remove('page-enter', 'page-exit');
+    }
   });
 
-  if (currentPage && currentPage !== targetPage) {
-    isAnimatingPage = true;
-    currentPage.classList.add('page-exit');
-    setTimeout(() => {
-      currentPage.classList.add('hidden');
-      currentPage.classList.remove('page-exit');
-      
-      targetPage.classList.remove('hidden');
-      targetPage.classList.add('page-enter');
-      
-      setTimeout(() => {
-        targetPage.classList.remove('page-enter');
-        isAnimatingPage = false;
-        if (page === 'camera' && window.initCameraPage) window.initCameraPage();
-        lucide.createIcons();
-      }, 500); 
-    }, 400); 
-  } else if (!currentPage) {
-    targetPage.classList.remove('hidden');
-    targetPage.classList.add('page-enter');
-    isAnimatingPage = true;
-    setTimeout(() => {
-      targetPage.classList.remove('page-enter');
-      isAnimatingPage = false;
-      if (page === 'camera' && window.initCameraPage) window.initCameraPage();
-      lucide.createIcons();
-    }, 500);
+  // Hiện trang mục tiêu và chạy hiệu ứng mờ dần
+  targetPage.classList.remove('hidden');
+  targetPage.classList.remove('page-exit');
+  targetPage.classList.add('page-enter');
+  
+  setTimeout(() => {
+    targetPage.classList.remove('page-enter');
+  }, 500);
+
+  if (page === 'camera' && window.initCameraPage) {
+    window.initCameraPage();
   }
+  lucide.createIcons();
 }
 
 function switchPageMobile(page) {
