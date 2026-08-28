@@ -46,12 +46,17 @@ def add_sensor_data():
 
         # Logic điều khiển tự động
         if not vuon.manual:
+            now = datetime.utcnow()
             if temperature is not None:
-                # Quạt bật khi nhiệt độ > 30°C
-                vuon.fan_state = True if temperature > 30.0 else False
+                new_fan = temperature > 30.0
+                if new_fan and not vuon.fan_state:
+                    vuon.fan_last_on = now  # Ghi thời điểm quạt vừa bật
+                vuon.fan_state = new_fan
             if humidity is not None:
-                # Bơm nước bật khi độ ẩm đất < 50%
-                vuon.pump_state = True if humidity < 50.0 else False
+                new_pump = humidity < 50.0
+                if new_pump and not vuon.pump_state:
+                    vuon.pump_last_on = now  # Ghi thời điểm bơm vừa bật
+                vuon.pump_state = new_pump
 
         # Lưu dữ liệu lịch sử cảm biến
         new_data = SensorData(
@@ -160,26 +165,22 @@ def update_control_state():
 
 @sensors_bp.route('/device_history/<int:vuon_id>', methods=['GET'])
 def get_device_last_active(vuon_id):
-    """Lấy thời điểm cuối cùng thiết bị hoạt động dựa trên cảm biến"""
+    """Lấy thời điểm cuối cùng thiết bị hoạt động, đọc từ bảng vuons"""
     try:
-        last_fan = SensorData.query.filter(SensorData.vuon_id == vuon_id, SensorData.temperature > 30.0)\
-                                   .order_by(SensorData.timestamp.desc()).first()
-        last_pump = SensorData.query.filter(SensorData.vuon_id == vuon_id, SensorData.humidity < 50.0)\
-                                    .order_by(SensorData.timestamp.desc()).first()
-        latest_record = SensorData.query.filter(SensorData.vuon_id == vuon_id)\
+        vuon          = Vuon.query.get(vuon_id)
+        latest_record = SensorData.query.filter_by(vuon_id=vuon_id)\
                                         .order_by(SensorData.timestamp.desc()).first()
-                                   
+
         is_offline = True
         if latest_record:
-            # So sánh thời gian (UTC)
             diff = (datetime.utcnow() - latest_record.timestamp).total_seconds()
             is_offline = diff > 15
 
         return jsonify({
-            "last_fan_on": last_fan.timestamp.isoformat() + 'Z' if last_fan else None,
-            "last_pump_on": last_pump.timestamp.isoformat() + 'Z' if last_pump else None,
-            "is_offline": is_offline,
-            "last_seen": latest_record.timestamp.isoformat() + 'Z' if latest_record else None
+            "last_fan_on":  vuon.fan_last_on.isoformat()  + 'Z' if vuon and vuon.fan_last_on  else None,
+            "last_pump_on": vuon.pump_last_on.isoformat() + 'Z' if vuon and vuon.pump_last_on else None,
+            "is_offline":   is_offline,
+            "last_seen":    latest_record.timestamp.isoformat() + 'Z' if latest_record else None
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
