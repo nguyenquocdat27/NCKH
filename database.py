@@ -68,8 +68,6 @@ class Vuon(db.Model):
     manual          = db.Column(db.Boolean, default=False)
     fan_state       = db.Column(db.Boolean, default=False)
     pump_state      = db.Column(db.Boolean, default=False)
-    fan_last_on     = db.Column(db.DateTime, nullable=True)   # Thời điểm quạt bật gần nhất
-    pump_last_on    = db.Column(db.DateTime, nullable=True)   # Thời điểm máy bơm bật gần nhất
     ngay_tao    = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Quan hệ với cảm biến
@@ -89,8 +87,6 @@ class Vuon(db.Model):
             'manual':          self.manual,
             'fan_state':       self.fan_state,
             'pump_state':      self.pump_state,
-            'fan_last_on':     self.fan_last_on.isoformat() + 'Z' if self.fan_last_on else None,
-            'pump_last_on':    self.pump_last_on.isoformat() + 'Z' if self.pump_last_on else None,
             'ngay_tao':        self.ngay_tao.strftime('%d/%m/%Y'),
         }
 
@@ -245,21 +241,6 @@ def init_db(app):
                 except Exception:
                     pass
 
-                # Thêm fan_last_on
-                try:
-                    conn.execute(text("ALTER TABLE vuons ADD COLUMN fan_last_on DATETIME"))
-                    conn.commit()
-                    print("⚙️  Đã thêm cột fan_last_on vào bảng vuons!")
-                except Exception:
-                    pass
-
-                # Thêm pump_last_on
-                try:
-                    conn.execute(text("ALTER TABLE vuons ADD COLUMN pump_last_on DATETIME"))
-                    conn.commit()
-                    print("⚙️  Đã thêm cột pump_last_on vào bảng vuons!")
-                except Exception:
-                    pass
         except Exception as e_mig:
             print(f"⚠️  Lỗi khi chạy migration tự động: {e_mig}")
 

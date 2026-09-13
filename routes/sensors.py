@@ -46,16 +46,11 @@ def add_sensor_data():
 
         # Logic điều khiển tự động
         if not vuon.manual:
-            now = datetime.utcnow()
             if temperature is not None:
                 new_fan = temperature > 30.0
-                if new_fan and not vuon.fan_state:
-                    vuon.fan_last_on = now  # Ghi thời điểm quạt vừa bật
                 vuon.fan_state = new_fan
             if humidity is not None:
                 new_pump = humidity < 50.0
-                if new_pump and not vuon.pump_state:
-                    vuon.pump_last_on = now  # Ghi thời điểm bơm vừa bật
                 vuon.pump_state = new_pump
 
         # Lưu dữ liệu lịch sử cảm biến
@@ -177,8 +172,8 @@ def get_device_last_active(vuon_id):
             is_offline = diff > 15
 
         return jsonify({
-            "last_fan_on":  vuon.fan_last_on.isoformat()  + 'Z' if vuon and vuon.fan_last_on  else None,
-            "last_pump_on": vuon.pump_last_on.isoformat() + 'Z' if vuon and vuon.pump_last_on else None,
+            "last_fan_on":  None,
+            "last_pump_on": None,
             "is_offline":   is_offline,
             "last_seen":    latest_record.timestamp.isoformat() + 'Z' if latest_record else None
         })
