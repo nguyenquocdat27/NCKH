@@ -4,58 +4,11 @@
 
 let sensorPollingInterval = null;
 
-function toggleWifiPassVisibility() {
-  const input = document.getElementById('esp32-wifi-pass');
-  const icon = document.getElementById('eye-icon');
-  if (!input) return;
-  if (input.type === 'password') {
-    input.type = 'text';
-    if (icon) icon.setAttribute('data-lucide', 'eye-off');
-  } else {
-    input.type = 'password';
-    if (icon) icon.setAttribute('data-lucide', 'eye');
-  }
-  if (window.lucide) lucide.createIcons();
-}
-
-function saveAndConnectESP32() {
-  const farmIdInput = document.getElementById('esp32-farm-id');
-  const ssidInput   = document.getElementById('esp32-wifi-ssid');
-  const passInput   = document.getElementById('esp32-wifi-pass');
-
-  const farmId = farmIdInput ? parseInt(farmIdInput.value) || 30001 : 30001;
-  const ssid   = ssidInput ? ssidInput.value.trim() : '';
-  const pass   = passInput ? passInput.value : '';
-
-  localStorage.setItem('esp32_vuon_id', farmId);
-  localStorage.setItem('esp32_wifi_ssid', ssid);
-  localStorage.setItem('esp32_wifi_pass', pass);
-
-  selectedFarmId = farmId;
-  const badgeEl = document.getElementById('display-vuon-id');
-  if (badgeEl) badgeEl.textContent = farmId;
-
-  const selector = document.getElementById('active-farm-selector');
-  if (selector) {
-    let exists = false;
-    for (let opt of selector.options) {
-      if (parseInt(opt.value) === farmId) { exists = true; break; }
-    }
-    if (!exists) {
-      const opt = document.createElement('option');
-      opt.value = farmId;
-      opt.textContent = `Vườn ESP32 (ID: ${farmId})`;
-      selector.appendChild(opt);
-    }
-    selector.value = farmId;
-  }
-
-  showToast(`✅ Đã lưu WiFi & kết nối Vườn ${farmId}!`);
-  startSensorPolling();
-}
-
 function connectESP32() {
-  saveAndConnectESP32();
+  const url = document.getElementById('esp32-url')?.value;
+  if (!url) { showToast('Vui lòng nhập URL ESP32'); return; }
+  showToast('Đang kết nối ESP32 và tải dữ liệu...');
+  startSensorPolling();
 }
 
 window.fetchAndUpdateSensors = async function() {
@@ -108,23 +61,11 @@ function startSensorPolling() {
   sensorPollingInterval = setInterval(window.fetchAndUpdateSensors, 5000);
 }
 
-// Khôi phục thông tin WiFi & Vườn ngay khi mở trang web
+// Tự động tải dữ liệu cảm biến vườn 30001 ngay khi mở trang web
 document.addEventListener('DOMContentLoaded', () => {
-  const savedFarmId = localStorage.getItem('esp32_vuon_id') || '30001';
-  const savedSsid   = localStorage.getItem('esp32_wifi_ssid') || 'Quoc Dat_2.4G';
-  const savedPass   = localStorage.getItem('esp32_wifi_pass') || '88888888';
-
-  const farmIdInput = document.getElementById('esp32-farm-id');
-  const ssidInput   = document.getElementById('esp32-wifi-ssid');
-  const passInput   = document.getElementById('esp32-wifi-pass');
-  const badgeEl     = document.getElementById('display-vuon-id');
-
-  if (farmIdInput) farmIdInput.value = savedFarmId;
-  if (ssidInput)   ssidInput.value   = savedSsid;
-  if (passInput)   passInput.value   = savedPass;
-  if (badgeEl)     badgeEl.textContent = savedFarmId;
-
-  selectedFarmId = parseInt(savedFarmId) || 30001;
+  if (!selectedFarmId) {
+    selectedFarmId = 30001;
+  }
   startSensorPolling();
 });
 

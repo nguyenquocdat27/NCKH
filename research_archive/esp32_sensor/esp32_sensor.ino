@@ -1,6 +1,6 @@
 // ============================================================================
 // HỆ THỐNG IoT NÔNG NGHIỆP THÔNG MINH - ESP32
-// Điều khiển cục bộ: Quạt, Máy bơm, Đèn quang hợp
+// Điều khiển cục bộ: Quạt (IO18), Máy bơm (IO19), Đèn (IO21)
 // Giám sát dữ liệu: Serial Monitor (Arduino IDE) & Cloud Web Server
 // ============================================================================
 
@@ -14,12 +14,30 @@
 #include <DallasTemperature.h>
 
 // ============================================================================
-// KHU 1: CẤU HÌNH CHÂN CẮM (PINOUT) - BẠN CÓ THỂ TỰ ĐỔI CHÂN TẠI ĐÂY
+// ⭐⭐⭐ KHU 1: CẤU HÌNH WIFI, ID VƯỜN & MÃ WEB (ĐIỀN TẠI ĐÂY) ⭐⭐⭐
 // ============================================================================
 
-// --- 1.1. Chân Relay điều khiển thiết bị ---
-#define RELAY_FAN_PIN    18   // Relay Quạt gió (IO18)
-#define RELAY_PUMP_PIN   19   // Relay Máy bơm nước (IO19)
+// [1.1] TÊN MẠNG WIFI (SSID) - Điền đúng tên WiFi nhà bạn hoặc Hotspot 2.4GHz
+const char* WIFI_SSID     = "Quoc Dat_2.4G";
+
+// [1.2] MẬT KHẨU MẠNG WIFI (PASSWORD) - Điền mật khẩu WiFi vào đây
+const char* WIFI_PASSWORD = "88888888";
+
+// [1.3] MÃ VƯỜN (VUON_ID) - Khớp với ID vườn trên Website hệ thống
+const int   VUON_ID       = 30001;
+
+// [1.4] MÃ WEB SERVER (URL API RENDER) - Nơi ESP32 gửi dữ liệu cảm biến lên
+const char* SERVER_URL    = "https://nckh-ai.onrender.com/api/sensors";
+const int   HTTP_TIMEOUT  = 6000; // Timeout chờ kết nối server (6s)
+
+
+// ============================================================================
+// KHU 2: CẤU HÌNH CHÂN CẮM (PINOUT) - BẠN CÓ THỂ TỰ ĐỔI CHÂN TẠI ĐÂY
+// ============================================================================
+
+// --- 2.1. Chân Relay điều khiển thiết bị ---
+#define RELAY_FAN_PIN    18   // Relay Quạt gió làm mát (IO18)
+#define RELAY_PUMP_PIN   19   // Relay Máy bơm nước tưới ẩm (IO19)
 #define RELAY_LIGHT_PIN  21   // Relay Đèn bổ sung ánh sáng (IO21)
 
 // Kiểu kích của Module Relay:
@@ -27,13 +45,13 @@
 #define RELAY_ON   LOW
 #define RELAY_OFF  HIGH
 
-// --- 1.2. Chân cảm biến nhiệt độ nước/đất (DS18B20) ---
+// --- 2.2. Chân cảm biến nhiệt độ nước/đất (DS18B20) ---
 #define ONE_WIRE_BUS     5    // Chân DATA cắm vào IO5 (Cần trở kéo 4.7k lên 3.3V)
 
-// --- 1.3. Chân cảm biến độ ẩm đất (Capacitive Soil Sensor) ---
+// --- 2.3. Chân cảm biến độ ẩm đất (Capacitive Soil Sensor) ---
 #define SOIL_ANALOG_PIN  4    // Chân AOUT cắm vào chân Analog IO4
 
-// --- 1.4. Chân giao tiếp I2C cho Cảm biến ánh sáng (BH1750) ---
+// --- 2.4. Chân giao tiếp I2C cho Cảm biến ánh sáng (BH1750) ---
 // Chân mặc định cho ESP32-S3/ESP32:
 // Nếu dùng ESP32 chuẩn (NodeMCU-32S): SDA thường là 21, SCL là 22
 // Nếu board của bạn đã nối SDA=8, SCL=9 thì giữ nguyên bên dưới:
@@ -42,32 +60,32 @@
 
 
 // ============================================================================
-// KHU 2: CẤU HÌNH THÔNG SỐ ĐIỀU KHIỂN & CÔNG THỨC QUY ĐỔI LUX
+// KHU 3: CẤU HÌNH CÔNG THỨC QUY ĐỔI LUX & NGƯỠNG ĐIỀU KHIỂN
 // ============================================================================
 
-// --- 2.1. CÔNG THỨC QUY ĐỔI ÁNH SÁNG BH1750 (QUAN TRỌNG) ---
-// Lý do: Khi bạn thử nghiệm trong nhà/phòng lab hoặc cảm biến đặt sau hộp kính,
+// --- 3.1. CÔNG THỨC QUY ĐỔI ÁNH SÁNG BH1750 ---
+// Khi thử nghiệm trong nhà/phòng lab hoặc cảm biến đặt sau hộp kính,
 // BH1750 chỉ đo được từ vài trăm đến ~1.000 lux.
 // Trong khi cây trồng ngoài trời cần ngưỡng 20.000 - 40.000 lux.
 //
-// Công thức tính: lux_hien_thi = raw_lux * LIGHT_SCALE_FACTOR
+// Công thức: lux_hien_thi = raw_lux * LIGHT_SCALE_FACTOR
 // Mặc định hệ số nhân = 30.0:
-//   - raw = 300 lx (tối)     -> tính ra:  9.000 lux (Thiếu sáng -> BẬT ĐÈN)
-//   - raw = 650 lx           -> tính ra: 19.500 lux (Thiếu sáng -> BẬT ĐÈN)
-//   - raw = 1.000 lx (sáng)  -> tính ra: 30.000 lux (Trong ngưỡng tối ưu -> TẮT ĐÈN)
+//   - raw = 300 lx (tối)        -> tính ra:  9.000 lux (Thiếu sáng -> BẬT ĐÈN)
+//   - raw = 650 lx              -> tính ra: 19.500 lux (Thiếu sáng -> BẬT ĐÈN)
+//   - raw = 1.000 lx (sáng tốt) -> tính ra: 30.000 lux (Trong ngưỡng tối ưu -> TẮT ĐÈN)
 //   - raw = 1.400 lx (rất sáng) -> tính ra: 42.000 lux (Thừa sáng)
-// (Nếu mang ra ngoài nắng to trực tiếp, bạn có thể chỉnh lại thành 1.0)
+// (Nếu mang ra ngoài trời nắng to trực tiếp, bạn có thể chỉnh lại thành 1.0)
 const float LIGHT_SCALE_FACTOR = 30.0;
 
 // Ngưỡng điều khiển ĐÈN (tính theo lux sau khi quy đổi)
 const float LIGHT_ON_THRESHOLD   = 20000.0; // < 20.000 lux: BẬT đèn
 const float LIGHT_OFF_THRESHOLD  = 25000.0; // >= 25.000 lux: TẮT đèn (Hysteresis chống nháy đèn)
 
-// --- 2.2. Ngưỡng điều khiển QUẠT (Nhiệt độ DS18B20) ---
+// --- 3.2. Ngưỡng điều khiển QUẠT (Nhiệt độ DS18B20 °C) ---
 const float TEMP_FAN_ON          = 30.0;    // > 30.0°C: BẬT quạt làm mát
 const float TEMP_FAN_OFF         = 28.0;    // <= 28.0°C: TẮT quạt
 
-// --- 2.3. Ngưỡng điều khiển MÁY BƠM (Độ ẩm đất %) ---
+// --- 3.3. Ngưỡng điều khiển MÁY BƠM (Độ ẩm đất %) ---
 const int   PUMP_ON_THRESHOLD    = 40;      // < 40%: BẬT máy bơm
 const int   PUMP_OFF_THRESHOLD   = 60;      // >= 60%: TẮT máy bơm
 
@@ -77,27 +95,16 @@ const int   SOIL_WET_ADC         = 1200;    // Giá trị ADC khi đất ngập 
 
 
 // ============================================================================
-// KHU 3: CẤU HÌNH THỜI GIAN & CHU KỲ HOẠT ĐỘNG
+// KHU 4: CẤU HÌNH CHU KỲ HOẠT ĐỘNG
 // ============================================================================
 
-// Chu kỳ đọc cảm biến & in lên Terminal Arduino IDE (Ví dụ: 2000ms = 2 giây)
+// Chu kỳ đọc cảm biến & in lên Terminal Arduino IDE (2000ms = 2 giây)
 // Giúp bạn theo dõi nhanh và thử nghiệm tức thì mà không phải chờ lâu.
 const unsigned long SENSOR_READ_INTERVAL_MS = 2000UL;
 
-// Chu kỳ gửi dữ liệu lên Cloud Server (Ví dụ: 15000ms = 15 giây)
-// Gửi định kỳ để không làm nghẽn mạng và tiết kiệm tài nguyên Server Render.
+// Chu kỳ gửi dữ liệu lên Cloud Server Render (15000ms = 15 giây)
+// Gửi định kỳ để không làm nghẽn mạng và tiết kiệm tài nguyên Server.
 const unsigned long SERVER_SEND_INTERVAL_MS = 15000UL;
-
-
-// ============================================================================
-// KHU 4: CẤU HÌNH KẾT NỐI WIFI & SERVER
-// ============================================================================
-const char* WIFI_SSID     = "Quoc Dat_2.4G";
-const char* WIFI_PASSWORD = "88888888";
-
-const char* SERVER_URL    = "https://nckh-ai.onrender.com/api/sensors";
-const int   VUON_ID       = 30001;
-const int   HTTP_TIMEOUT  = 6000; // Thời gian chờ phản hồi server tối đa 6s
 
 
 // ============================================================================
