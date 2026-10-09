@@ -124,7 +124,17 @@ function populateFarmSelector() {
   const selector = document.getElementById('active-farm-selector');
   if (!selector) return;
   
-  selector.innerHTML = '<option value="">-- Chọn vườn --</option>';
+  selector.innerHTML = '';
+  
+  // Kiểm tra nếu trong farms chưa có 30001 thì thêm vào làm vườn IoT mặc định
+  const has30001 = farms.some(f => parseInt(f.id) === 30001);
+  if (!has30001) {
+    const defaultOpt = document.createElement('option');
+    defaultOpt.value = '30001';
+    defaultOpt.textContent = 'Vườn ESP32 (ID: 30001)';
+    selector.appendChild(defaultOpt);
+  }
+
   farms.forEach(farm => {
     const option = document.createElement('option');
     option.value = farm.id;
@@ -132,9 +142,10 @@ function populateFarmSelector() {
     selector.appendChild(option);
   });
   
-  if (selectedFarmId) {
-    selector.value = selectedFarmId;
+  if (!selectedFarmId) {
+    selectedFarmId = 30001;
   }
+  selector.value = selectedFarmId;
 }
 
 function changeActiveFarm(farmId) {

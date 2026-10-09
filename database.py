@@ -63,11 +63,8 @@ class Vuon(db.Model):
     loai_cay    = db.Column(db.String(100), default='Cây ớt')
     dia_chi     = db.Column(db.String(200))
     ghi_chu     = db.Column(db.Text)
-    camera_interval = db.Column(db.Integer, default=30) # Chu kỳ tự động chụp (phút), 0 là tắt
-    camera_command  = db.Column(db.String(50), default='idle') # Lệnh từ server: 'idle' hoặc 'capture'
-    manual          = db.Column(db.Boolean, default=False)
-    fan_state       = db.Column(db.Boolean, default=False)
-    pump_state      = db.Column(db.Boolean, default=False)
+    camera_interval = db.Column(db.Integer, default=30)
+    camera_command  = db.Column(db.String(50), default='idle')
     ngay_tao    = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Quan hệ với cảm biến
@@ -84,9 +81,6 @@ class Vuon(db.Model):
             'ghi_chu':         self.ghi_chu,
             'camera_interval': self.camera_interval,
             'camera_command':  self.camera_command,
-            'manual':          self.manual,
-            'fan_state':       self.fan_state,
-            'pump_state':      self.pump_state,
             'ngay_tao':        self.ngay_tao.strftime('%d/%m/%Y'),
         }
 
@@ -188,60 +182,33 @@ def init_db(app):
                 print(f"❌ Lỗi SQLite: {e2}")
                 return
 
-        # Thực hiện di chuyển cơ sở dữ liệu tự động (Add columns) để không lỗi dữ liệu cũ
+        # Migration tự động: thêm cột mới vào DB cũ mà không mất dữ liệu
         try:
-            # Chạy các câu lệnh SQL alter table trực tiếp
             from sqlalchemy import text
             with db.engine.connect() as conn:
-                # Check và thêm camera_interval
+                # camera_interval
                 try:
                     conn.execute(text("ALTER TABLE vuons ADD COLUMN camera_interval INTEGER DEFAULT 30"))
                     conn.commit()
-                    print("⚙️  Đã thêm cột camera_interval vào bảng vuons!")
+                    print("⚙️  Đã thêm cột camera_interval!")
                 except Exception:
                     pass
 
-                # Check và thêm camera_command
+                # camera_command
                 try:
                     conn.execute(text("ALTER TABLE vuons ADD COLUMN camera_command VARCHAR(50) DEFAULT 'idle'"))
                     conn.commit()
-                    print("⚙️  Đã thêm cột camera_command vào bảng vuons!")
+                    print("⚙️  Đã thêm cột camera_command!")
                 except Exception:
                     pass
-                    
-                # Nâng cấp image_data lên LONGTEXT để chứa ảnh lớn
+
+                # Nâng cấp image_data lên LONGTEXT
                 try:
                     conn.execute(text("ALTER TABLE camera_analysis MODIFY image_data LONGTEXT"))
                     conn.commit()
-                    print("⚙️  Đã nâng cấp cột image_data lên LONGTEXT!")
-                except Exception:
-                    pass
-
-                # Check và thêm manual
-                try:
-                    conn.execute(text("ALTER TABLE vuons ADD COLUMN manual BOOLEAN DEFAULT FALSE"))
-                    conn.commit()
-                    print("⚙️  Đã thêm cột manual vào bảng vuons!")
-                except Exception:
-                    pass
-
-                # Check và thêm fan_state
-                try:
-                    conn.execute(text("ALTER TABLE vuons ADD COLUMN fan_state BOOLEAN DEFAULT FALSE"))
-                    conn.commit()
-                    print("⚙️  Đã thêm cột fan_state vào bảng vuons!")
-                except Exception:
-                    pass
-
-                # Check và thêm pump_state
-                try:
-                    conn.execute(text("ALTER TABLE vuons ADD COLUMN pump_state BOOLEAN DEFAULT FALSE"))
-                    conn.commit()
-                    print("⚙️  Đã thêm cột pump_state vào bảng vuons!")
+                    print("⚙️  Đã nâng cấp image_data lên LONGTEXT!")
                 except Exception:
                     pass
 
         except Exception as e_mig:
-            print(f"⚠️  Lỗi khi chạy migration tự động: {e_mig}")
-
-
+            print(f"⚠️  Lỗi migration: {e_mig}")

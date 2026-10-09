@@ -4,24 +4,68 @@
 
 let sensorPollingInterval = null;
 
-function connectESP32() {
-  const url = document.getElementById('esp32-url').value;
-  if (!url) { showToast('Vui lòng nhập URL ESP32'); return; }
-  showToast('Đang kết nối ESP32 và tải dữ liệu...');
+function toggleWifiPassVisibility() {
+  const input = document.getElementById('esp32-wifi-pass');
+  const icon = document.getElementById('eye-icon');
+  if (!input) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    if (icon) icon.setAttribute('data-lucide', 'eye-off');
+  } else {
+    input.type = 'password';
+    if (icon) icon.setAttribute('data-lucide', 'eye');
+  }
+  if (window.lucide) lucide.createIcons();
+}
+
+function saveAndConnectESP32() {
+  const farmIdInput = document.getElementById('esp32-farm-id');
+  const ssidInput   = document.getElementById('esp32-wifi-ssid');
+  const passInput   = document.getElementById('esp32-wifi-pass');
+
+  const farmId = farmIdInput ? parseInt(farmIdInput.value) || 30001 : 30001;
+  const ssid   = ssidInput ? ssidInput.value.trim() : '';
+  const pass   = passInput ? passInput.value : '';
+
+  localStorage.setItem('esp32_vuon_id', farmId);
+  localStorage.setItem('esp32_wifi_ssid', ssid);
+  localStorage.setItem('esp32_wifi_pass', pass);
+
+  selectedFarmId = farmId;
+  const badgeEl = document.getElementById('display-vuon-id');
+  if (badgeEl) badgeEl.textContent = farmId;
+
+  const selector = document.getElementById('active-farm-selector');
+  if (selector) {
+    let exists = false;
+    for (let opt of selector.options) {
+      if (parseInt(opt.value) === farmId) { exists = true; break; }
+    }
+    if (!exists) {
+      const opt = document.createElement('option');
+      opt.value = farmId;
+      opt.textContent = `Vườn ESP32 (ID: ${farmId})`;
+      selector.appendChild(opt);
+    }
+    selector.value = farmId;
+  }
+
+  showToast(`✅ Đã lưu WiFi & kết nối Vườn ${farmId}!`);
   startSensorPolling();
+}
+
+function connectESP32() {
+  saveAndConnectESP32();
 }
 
 window.fetchAndUpdateSensors = async function() {
   if (!selectedFarmId) return;
 
-  // Đồng bộ trạng thái thiết bị điều khiển (Quạt/Bơm) từ server
-  window.fetchDeviceControlState(selectedFarmId);
-
   try {
     const history = await dbGetSensorHistory(selectedFarmId, 10);
     if (!history || history.length === 0) return;
 
-    // Backend trả về oldest -> newest. Nên lấy bản ghi cuối cùng làm giá trị hiện tại (mới nhất)
+    // Backend trả về oldest -> newest. Lấy bản ghi cuối cùng làm giá trị hiện tại (mới nhất)
     const latest = history[history.length - 1];
 
     const tEl = document.getElementById('esp32-temp');
@@ -38,12 +82,12 @@ window.fetchAndUpdateSensors = async function() {
     // Cập nhật Bảng lịch sử cảm biến
     renderSensorHistoryTable(history);
     
-    // Lấy lịch sử hoạt động thiết bị (Quạt/Bơm) từ backend
+    // Lấy lịch sử hoạt động thiết bị từ backend
     fetchDeviceHistory();
   } catch (e) {
     console.error("Lỗi lấy dữ liệu sensors:", e);
   }
-}
+};
 
 async function fetchDeviceHistory() {
   if (!selectedFarmId) return;
@@ -64,9 +108,24 @@ function startSensorPolling() {
   sensorPollingInterval = setInterval(window.fetchAndUpdateSensors, 5000);
 }
 
-// Tự động khởi chạy ngay khi mở trang web (Không cần nhấn Nút kết nối ESP32)
+// Khôi phục thông tin WiFi & Vườn ngay khi mở trang web
 document.addEventListener('DOMContentLoaded', () => {
-    startSensorPolling();
+  const savedFarmId = localStorage.getItem('esp32_vuon_id') || '30001';
+  const savedSsid   = localStorage.getItem('esp32_wifi_ssid') || 'Quoc Dat_2.4G';
+  const savedPass   = localStorage.getItem('esp32_wifi_pass') || '88888888';
+
+  const farmIdInput = document.getElementById('esp32-farm-id');
+  const ssidInput   = document.getElementById('esp32-wifi-ssid');
+  const passInput   = document.getElementById('esp32-wifi-pass');
+  const badgeEl     = document.getElementById('display-vuon-id');
+
+  if (farmIdInput) farmIdInput.value = savedFarmId;
+  if (ssidInput)   ssidInput.value   = savedSsid;
+  if (passInput)   passInput.value   = savedPass;
+  if (badgeEl)     badgeEl.textContent = savedFarmId;
+
+  selectedFarmId = parseInt(savedFarmId) || 30001;
+  startSensorPolling();
 });
 
 async function showSensorChart(type) {
@@ -175,27 +234,9 @@ function closeSensorChart() {
 }
 
 // ============================================================
-// LOGIC ĐIỀU KHIỂN THIẾT BỊ DUAL RELAY (QUẠT & BƠM)
+// TRẠNG THÁI KẾT NỐI & HOẠT ĐỘNG THIẾT BỊ
+// (Thiết bị ESP32 tự động điều khiển Quạt, Bơm, Đèn cục bộ)
 // ============================================================
-
-window.currentDeviceState = { manual: false, fan_state: false, pump_state: false };
-
-window.fetchDeviceControlState = async function(vuonId) {
-  if (!vuonId) return;
-  try {
-    const res = await fetch(`/api/control?vuon_id=${vuonId}`);
-    const state = await res.json();
-    window.updateControlUI(state);
-  } catch (err) {
-    console.error("Lỗi lấy trạng thái điều khiển thiết bị:", err);
-  }
-}
-
-window.deviceStateHistory = [];
-
-window.updateControlUI = function(state) {
-  // Không cần làm gì nữa vì đã dùng fetchDeviceHistory để cập nhật UI
-}
 
 function updateDeviceHistoryUI(data) {
   const historyList = document.getElementById('device-history-list');
@@ -203,12 +244,11 @@ function updateDeviceHistoryUI(data) {
   
   historyList.innerHTML = '';
   
-  // Trạng thái ESP32
+  // Trạng thái kết nối ESP32
   const statusLi = document.createElement('li');
   const isOnline = !data.is_offline;
   statusLi.className = `p-3 rounded-xl border ${isOnline ? 'bg-emerald-50 border-emerald-100' : 'bg-slate-50 border-slate-200'} flex items-center justify-between transition-all`;
   
-  // Format last seen
   let lastSeenStr = 'Chưa có dữ liệu';
   if (data.last_seen) {
      const d = new Date(data.last_seen);
@@ -226,65 +266,31 @@ function updateDeviceHistoryUI(data) {
       </div>
     </div>
     <div class="text-right">
-      <p class="text-xs font-bold text-slate-600">${isOnline ? 'Hiện tại' : lastSeenStr}</p>
-      <p class="text-[10px] text-slate-400">Lần cuối</p>
+      <p class="text-xs font-bold text-slate-600">${isOnline ? 'Trực tuyến' : lastSeenStr}</p>
+      <p class="text-[10px] text-slate-400">Lần cuối gửi tin</p>
     </div>
   `;
   historyList.appendChild(statusLi);
 
-  // Quạt gió
-  let fanTimeStr = 'Chưa từng chạy';
-  let fanDateStr = '';
-  if (data.last_fan_on) {
-     const d = new Date(data.last_fan_on);
-     fanTimeStr = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
-     fanDateStr = d.toLocaleDateString();
-  }
-  const fanLi = document.createElement('li');
-  fanLi.className = `p-3 rounded-xl border bg-cyan-50 border-cyan-100 flex items-center justify-between transition-all mt-3`;
-  fanLi.innerHTML = `
+  // Cơ chế vận hành tự động cục bộ
+  const autoLi = document.createElement('li');
+  autoLi.className = `p-3 rounded-xl border bg-amber-50 border-amber-100 flex items-center justify-between transition-all mt-3`;
+  autoLi.innerHTML = `
     <div class="flex items-center gap-3">
       <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm">
-        <i data-lucide="fan" class="w-4 h-4 text-cyan-500"></i>
+        <i data-lucide="cpu" class="w-4 h-4 text-amber-500"></i>
       </div>
       <div>
-        <p class="text-sm font-semibold text-slate-700">Quạt gió (Giảm nhiệt)</p>
-        <p class="text-xs font-bold text-cyan-500">Lần cuối > 30°C</p>
+        <p class="text-sm font-semibold text-slate-700">Chế độ điều khiển</p>
+        <p class="text-xs font-bold text-amber-600">🤖 Tự động cục bộ (ESP32)</p>
       </div>
     </div>
     <div class="text-right">
-      <p class="text-xs font-bold text-slate-600">${fanTimeStr}</p>
-      <p class="text-[10px] text-slate-400">${fanDateStr}</p>
+      <p class="text-xs font-bold text-slate-600">Quạt / Bơm / Đèn</p>
+      <p class="text-[10px] text-slate-400">Thời gian thực</p>
     </div>
   `;
-  historyList.appendChild(fanLi);
-
-  // Máy bơm
-  let pumpTimeStr = 'Chưa từng chạy';
-  let pumpDateStr = '';
-  if (data.last_pump_on) {
-     const d = new Date(data.last_pump_on);
-     pumpTimeStr = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
-     pumpDateStr = d.toLocaleDateString();
-  }
-  const pumpLi = document.createElement('li');
-  pumpLi.className = `p-3 rounded-xl border bg-blue-50 border-blue-100 flex items-center justify-between transition-all mt-3`;
-  pumpLi.innerHTML = `
-    <div class="flex items-center gap-3">
-      <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm">
-        <i data-lucide="droplets" class="w-4 h-4 text-blue-500"></i>
-      </div>
-      <div>
-        <p class="text-sm font-semibold text-slate-700">Máy bơm (Tưới ẩm)</p>
-        <p class="text-xs font-bold text-blue-500">Lần cuối < 50%</p>
-      </div>
-    </div>
-    <div class="text-right">
-      <p class="text-xs font-bold text-slate-600">${pumpTimeStr}</p>
-      <p class="text-[10px] text-slate-400">${pumpDateStr}</p>
-    </div>
-  `;
-  historyList.appendChild(pumpLi);
+  historyList.appendChild(autoLi);
   
   if (window.lucide) {
     lucide.createIcons();

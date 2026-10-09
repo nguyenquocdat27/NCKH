@@ -9,17 +9,58 @@
             <i data-lucide="map-pin" class="w-4 h-4 text-emerald-600"></i>
             <span class="text-sm font-medium text-slate-600 whitespace-nowrap">Vườn:</span>
             <select id="active-farm-selector" onchange="changeActiveFarm(this.value)" class="text-sm font-bold text-slate-800 bg-transparent border-none focus:ring-0 cursor-pointer outline-none w-full min-w-[150px]">
-              <option value="">-- Chọn một vườn --</option>
+              <option value="30001">Vườn ESP32 (ID: 30001)</option>
             </select>
           </div>
         </div>
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div class="lg:col-span-1">
+            <!-- Cấu hình WiFi & ID Vườn -->
             <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-              <h3 class="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2"><i data-lucide="wifi" class="w-5 h-5 text-cyan-500"></i> Kết nối ESP32</h3>
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                  <i data-lucide="wifi" class="w-5 h-5 text-cyan-500"></i> Kết nối ESP32 &amp; WiFi
+                </h3>
+                <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                  ID: <span id="display-vuon-id">30001</span>
+                </span>
+              </div>
               <div class="space-y-3">
-                <div class="p-4 bg-slate-50 rounded-xl"><label class="block text-sm font-medium text-slate-700 mb-2">URL ESP32</label><input type="text" id="esp32-url" placeholder="http://192.168.1.100" class="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500" value="http://esp32.local"></div>
-                <button onclick="connectESP32()" class="w-full px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white rounded-xl font-medium transition-all flex items-center justify-center gap-2"><i data-lucide="wifi" class="w-5 h-5"></i> Kết nối</button>
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">Mã Vườn (ID Vườn ESP32)</label>
+                  <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                      <i data-lucide="tag" class="w-4 h-4"></i>
+                    </span>
+                    <input type="number" id="esp32-farm-id" value="30001" placeholder="30001" class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-xl font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm">
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">Tên mạng WiFi (SSID)</label>
+                  <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                      <i data-lucide="router" class="w-4 h-4"></i>
+                    </span>
+                    <input type="text" id="esp32-wifi-ssid" placeholder="Nhập tên WiFi (VD: Quoc Dat_2.4G)" value="Quoc Dat_2.4G" class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm">
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">Mật khẩu WiFi</label>
+                  <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                      <i data-lucide="key-round" class="w-4 h-4"></i>
+                    </span>
+                    <input type="password" id="esp32-wifi-pass" placeholder="Nhập mật khẩu WiFi" value="88888888" class="w-full pl-9 pr-10 py-2 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-cyan-500 text-sm">
+                    <button type="button" onclick="toggleWifiPassVisibility()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
+                      <i id="eye-icon" data-lucide="eye" class="w-4 h-4"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <button onclick="saveAndConnectESP32()" class="w-full mt-2 px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white rounded-xl font-bold transition-all shadow-md shadow-cyan-500/20 flex items-center justify-center gap-2 hover:-translate-y-0.5">
+                  <i data-lucide="save" class="w-4 h-4"></i> Lưu &amp; Kết nối Vườn
+                </button>
               </div>
             </div>
 
@@ -40,19 +81,19 @@
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div class="card-hover sensor-card-clickable bg-white rounded-2xl p-6 border border-slate-200 shadow-sm" onclick="showSensorChart('temperature')">
                 <div class="flex items-center justify-between mb-4"><div class="w-12 h-12 rounded-lg bg-red-100 flex items-center justify-center"><i data-lucide="thermometer" class="w-6 h-6 text-red-600"></i></div><span id="badge-temp" class="text-sm font-semibold text-teal-600 bg-teal-50 px-2 py-1 rounded-full">Đang tải...</span></div>
-                <p class="text-sm text-slate-600 mb-1">Nhiệt độ</p><p class="text-3xl font-bold text-red-600" id="esp32-temp">28.5°C</p><p class="text-xs text-slate-500 mt-2">Tối ưu: 20-30°C</p>
+                <p class="text-sm text-slate-600 mb-1">Nhiệt độ</p><p class="text-3xl font-bold text-red-600" id="esp32-temp">28.5°C</p><p class="text-xs text-slate-500 mt-2">Tối ưu: 22 - 28°C</p>
                 <div class="mt-3 w-full bg-slate-200 rounded-full h-2"><div class="bg-red-500 h-2 rounded-full" style="width:71%"></div></div>
                 <p class="text-xs text-slate-400 mt-2 text-center">Bấm để xem biểu đồ</p>
               </div>
               <div class="card-hover sensor-card-clickable bg-white rounded-2xl p-6 border border-slate-200 shadow-sm" onclick="showSensorChart('humidity')">
                 <div class="flex items-center justify-between mb-4"><div class="w-12 h-12 rounded-lg bg-cyan-100 flex items-center justify-center"><i data-lucide="droplets" class="w-6 h-6 text-cyan-600"></i></div><span id="badge-hum" class="text-sm font-semibold text-teal-600 bg-teal-50 px-2 py-1 rounded-full">Đang tải...</span></div>
-                <p class="text-sm text-slate-600 mb-1">Độ ẩm đất</p><p class="text-3xl font-bold text-cyan-600" id="esp32-humidity">65%</p><p class="text-xs text-slate-500 mt-2">Tối ưu: 30-80%</p>
+                <p class="text-sm text-slate-600 mb-1">Độ ẩm đất</p><p class="text-3xl font-bold text-cyan-600" id="esp32-humidity">65%</p><p class="text-xs text-slate-500 mt-2">Tối ưu: 60 - 70%</p>
                 <div class="mt-3 w-full bg-slate-200 rounded-full h-2"><div class="bg-cyan-500 h-2 rounded-full" style="width:65%"></div></div>
                 <p class="text-xs text-slate-400 mt-2 text-center">Bấm để xem biểu đồ</p>
               </div>
               <div class="card-hover sensor-card-clickable bg-white rounded-2xl p-6 border border-slate-200 shadow-sm" onclick="showSensorChart('light')">
                 <div class="flex items-center justify-between mb-4"><div class="w-12 h-12 rounded-lg bg-amber-100 flex items-center justify-center"><i data-lucide="sun" class="w-6 h-6 text-amber-600"></i></div><span id="badge-light" class="text-sm font-semibold text-teal-600 bg-teal-50 px-2 py-1 rounded-full">Đang tải...</span></div>
-                <p class="text-sm text-slate-600 mb-1">Ánh sáng</p><p class="text-3xl font-bold text-amber-600" id="esp32-light">850 lux</p><p class="text-xs text-slate-500 mt-2">Tối ưu: 500-1500 lux</p>
+                <p class="text-sm text-slate-600 mb-1">Ánh sáng</p><p class="text-3xl font-bold text-amber-600" id="esp32-light">850 lux</p><p class="text-xs text-slate-500 mt-2">Tối ưu: 25.000 - 40.000 lux</p>
                 <div class="mt-3 w-full bg-slate-200 rounded-full h-2"><div class="bg-amber-500 h-2 rounded-full" style="width:57%"></div></div>
                 <p class="text-xs text-slate-400 mt-2 text-center">Bấm để xem biểu đồ</p>
               </div>

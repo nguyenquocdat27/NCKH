@@ -1,360 +1,461 @@
-// ============================================================
-// esp32_sensor.ino — Hệ thống IoT Nông nghiệp v3
-//
-// LUỒNG CHÍNH:
-//   1. Đọc cảm biến nhiệt độ & độ ẩm
-//   2. Nếu độ ẩm THẤP → bật máy bơm cục bộ
-//      → Tiếp tục đọc lại mỗi 3 giây cho đến khi đủ ẩm
-//      → Tắt máy bơm khi độ ẩm đạt mức ổn định
-//   3. Gửi dữ liệu (sau bơm xong) lên server
-//   4. Nhận lệnh quạt / chế độ manual từ server
-// ============================================================
+// ============================================================================
+// HỆ THỐNG IoT NÔNG NGHIỆP THÔNG MINH - ESP32
+// Điều khiển cục bộ: Quạt, Máy bơm, Đèn quang hợp
+// Giám sát dữ liệu: Serial Monitor (Arduino IDE) & Cloud Web Server
+// ============================================================================
 
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <WiFiClientSecure.h>
 #include <ArduinoJson.h>
+#include <Wire.h>
+#include <BH1750.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
-// ============================================================
-// CẤU HÌNH WiFi
-// ============================================================
-const char* WIFI_SSID     = "Quoc Dat_2.4G";
-const char* WIFI_PASSWORD = "88888888";
+// ============================================================================
+// KHU 1: CẤU HÌNH CHÂN CẮM (PINOUT) - BẠN CÓ THỂ TỰ ĐỔI CHÂN TẠI ĐÂY
+// ============================================================================
 
-// ============================================================
-// CẤU HÌNH CHÂN I/O
-// ============================================================
-#define ONE_WIRE_BUS    5     // DS18B20 (cần trở kéo 4.7kΩ lên 3.3V)
-#define SOIL_PIN        4     // Cảm biến độ ẩm đất (ADC)
-#define RELAY_FAN_PIN   18    // Quạt giải nhiệt  → IO18
-#define RELAY_PUMP_PIN  19    // Máy bơm nước     → IO19
+// --- 1.1. Chân Relay điều khiển thiết bị ---
+#define RELAY_FAN_PIN    18   // Relay Quạt gió (IO18)
+#define RELAY_PUMP_PIN   19   // Relay Máy bơm nước (IO19)
+#define RELAY_LIGHT_PIN  21   // Relay Đèn bổ sung ánh sáng (IO21)
 
-// Active LOW (relay module phổ biến: BẬT khi nhận LOW)
+// Kiểu kích của Module Relay:
+// Hầu hết module relay ESP32 là Active LOW (Xuất mức LOW = BẬT, HIGH = TẮT)
 #define RELAY_ON   LOW
 #define RELAY_OFF  HIGH
 
-// ============================================================
-// HIỆU CHUẨN CẢM BIẾN ĐỘ ẨM
-// ============================================================
-const int DRY_ADC = 3500;   // ADC khi đất khô hoàn toàn
-const int WET_ADC = 1200;   // ADC khi đất ngập nước
+// --- 1.2. Chân cảm biến nhiệt độ nước/đất (DS18B20) ---
+#define ONE_WIRE_BUS     5    // Chân DATA cắm vào IO5 (Cần trở kéo 4.7k lên 3.3V)
 
-// ============================================================
-// NGƯỠNG ĐIỀU KHIỂN MÁY BƠM (Hysteresis — ngưỡng kép)
-// ============================================================
-//  • Bật bơm khi độ ẩm < PUMP_ON_THRESHOLD
-//  • Tiếp tục bơm cho đến khi độ ẩm >= PUMP_OFF_THRESHOLD
-//  • Khoảng trống giữa 2 ngưỡng tránh bơm nhấp nháy liên tục
-const int PUMP_ON_THRESHOLD  = 40;  // % — Dưới ngưỡng này → BẬT bơm
-const int PUMP_OFF_THRESHOLD = 60;  // % — Đạt ngưỡng này  → TẮT bơm
+// --- 1.3. Chân cảm biến độ ẩm đất (Capacitive Soil Sensor) ---
+#define SOIL_ANALOG_PIN  4    // Chân AOUT cắm vào chân Analog IO4
 
-// Thời gian chờ giữa các lần đọc lại trong lúc đang bơm (ms)
-const int PUMP_RECHECK_MS = 3000;
+// --- 1.4. Chân giao tiếp I2C cho Cảm biến ánh sáng (BH1750) ---
+// Chân mặc định cho ESP32-S3/ESP32:
+// Nếu dùng ESP32 chuẩn (NodeMCU-32S): SDA thường là 21, SCL là 22
+// Nếu board của bạn đã nối SDA=8, SCL=9 thì giữ nguyên bên dưới:
+#define I2C_SDA_PIN      8    // Chân SDA của BH1750 cắm vào IO8
+#define I2C_SCL_PIN      9    // Chân SCL của BH1750 cắm vào IO9
 
-// Thời gian bơm tối đa (phòng tràn nước khi cảm biến lỗi): 5 phút
-const unsigned long PUMP_MAX_DURATION_MS = 5UL * 60UL * 1000UL;
 
-// ============================================================
-// NGƯỠNG ĐIỀU KHIỂN NHIỆT ĐỘ (Cho quạt — Server quyết định)
-// ============================================================
-const float FAN_ON_TEMP  = 30.0;  // °C — Server bật quạt trên ngưỡng này
+// ============================================================================
+// KHU 2: CẤU HÌNH THÔNG SỐ ĐIỀU KHIỂN & CÔNG THỨC QUY ĐỔI LUX
+// ============================================================================
 
-// ============================================================
-// CẤU HÌNH SERVER & VƯỜN
-// ============================================================
-const char* SERVER_URL = "https://nckh-ai.onrender.com/api/sensors";
-const int   VUON_ID    = 30001;
+// --- 2.1. CÔNG THỨC QUY ĐỔI ÁNH SÁNG BH1750 (QUAN TRỌNG) ---
+// Lý do: Khi bạn thử nghiệm trong nhà/phòng lab hoặc cảm biến đặt sau hộp kính,
+// BH1750 chỉ đo được từ vài trăm đến ~1.000 lux.
+// Trong khi cây trồng ngoài trời cần ngưỡng 20.000 - 40.000 lux.
+//
+// Công thức tính: lux_hien_thi = raw_lux * LIGHT_SCALE_FACTOR
+// Mặc định hệ số nhân = 30.0:
+//   - raw = 300 lx (tối)     -> tính ra:  9.000 lux (Thiếu sáng -> BẬT ĐÈN)
+//   - raw = 650 lx           -> tính ra: 19.500 lux (Thiếu sáng -> BẬT ĐÈN)
+//   - raw = 1.000 lx (sáng)  -> tính ra: 30.000 lux (Trong ngưỡng tối ưu -> TẮT ĐÈN)
+//   - raw = 1.400 lx (rất sáng) -> tính ra: 42.000 lux (Thừa sáng)
+// (Nếu mang ra ngoài nắng to trực tiếp, bạn có thể chỉnh lại thành 1.0)
+const float LIGHT_SCALE_FACTOR = 30.0;
 
-// ============================================================
-// CẤU HÌNH LẤY TRUNG BÌNH (Chống nhiễu)
-// ============================================================
-const int NUM_SAMPLES     = 10;
-const int SAMPLE_DELAY_MS = 200;   // 10 × 200ms ≈ 2 giây/cảm biến
+// Ngưỡng điều khiển ĐÈN (tính theo lux sau khi quy đổi)
+const float LIGHT_ON_THRESHOLD   = 20000.0; // < 20.000 lux: BẬT đèn
+const float LIGHT_OFF_THRESHOLD  = 25000.0; // >= 25.000 lux: TẮT đèn (Hysteresis chống nháy đèn)
 
-// ============================================================
-// CẤU HÌNH KHÁC
-// ============================================================
-const int          HTTP_TIMEOUT_MS  = 8000;
-const unsigned int LOOP_DELAY_MS    = 5000;  // Delay cuối mỗi vòng lặp
+// --- 2.2. Ngưỡng điều khiển QUẠT (Nhiệt độ DS18B20) ---
+const float TEMP_FAN_ON          = 30.0;    // > 30.0°C: BẬT quạt làm mát
+const float TEMP_FAN_OFF         = 28.0;    // <= 28.0°C: TẮT quạt
 
-// ============================================================
-// BIẾN TOÀN CỤC
-// ============================================================
-bool currentFanState  = false;
-bool currentPumpState = false;
-bool isManualMode     = false;  // Nếu true → ESP32 không tự điều khiển bơm
+// --- 2.3. Ngưỡng điều khiển MÁY BƠM (Độ ẩm đất %) ---
+const int   PUMP_ON_THRESHOLD    = 40;      // < 40%: BẬT máy bơm
+const int   PUMP_OFF_THRESHOLD   = 60;      // >= 60%: TẮT máy bơm
 
+// Hiệu chuẩn ADC cảm biến độ ẩm đất
+const int   SOIL_DRY_ADC         = 3500;    // Giá trị ADC khi đất khô hoàn toàn
+const int   SOIL_WET_ADC         = 1200;    // Giá trị ADC khi đất ngập nước
+
+
+// ============================================================================
+// KHU 3: CẤU HÌNH THỜI GIAN & CHU KỲ HOẠT ĐỘNG
+// ============================================================================
+
+// Chu kỳ đọc cảm biến & in lên Terminal Arduino IDE (Ví dụ: 2000ms = 2 giây)
+// Giúp bạn theo dõi nhanh và thử nghiệm tức thì mà không phải chờ lâu.
+const unsigned long SENSOR_READ_INTERVAL_MS = 2000UL;
+
+// Chu kỳ gửi dữ liệu lên Cloud Server (Ví dụ: 15000ms = 15 giây)
+// Gửi định kỳ để không làm nghẽn mạng và tiết kiệm tài nguyên Server Render.
+const unsigned long SERVER_SEND_INTERVAL_MS = 15000UL;
+
+
+// ============================================================================
+// KHU 4: CẤU HÌNH KẾT NỐI WIFI & SERVER
+// ============================================================================
+const char* WIFI_SSID     = "Quoc Dat_2.4G";
+const char* WIFI_PASSWORD = "88888888";
+
+const char* SERVER_URL    = "https://nckh-ai.onrender.com/api/sensors";
+const int   VUON_ID       = 30001;
+const int   HTTP_TIMEOUT  = 6000; // Thời gian chờ phản hồi server tối đa 6s
+
+
+// ============================================================================
+// KHAI BÁO BIẾN TOÀN CỤC & ĐỐI TƯỢNG CẢM BIẾN
+// ============================================================================
 OneWire           oneWire(ONE_WIRE_BUS);
 DallasTemperature ds18b20(&oneWire);
+BH1750            lightMeter;
 
-// ============================================================
-// KHAI BÁO HÀM (Prototypes)
-// ============================================================
-float readTemperature();
-int   readHumidity();
-int   readHumidityFast();   // Đọc nhanh (3 mẫu) dùng trong vòng bơm
-void  runPumpUntilWet();
-void  setFan(bool on);
-void  setPump(bool on);
-void  sendDataAndControl(float temperature, int humidity);
-void  printSensorData(float temperature, int humidity);
-void  connectWiFi();
+bool bh1750Connected   = false;
+bool fanState          = false;
+bool pumpState         = false;
+bool lightState        = false;
 
-// ============================================================
-// SETUP
-// ============================================================
+// Biến lưu dữ liệu đo mới nhất
+float currentTemp      = 25.0;
+int   currentHumidity  = 50;
+float currentRawLux    = 0.0;
+float currentCalibLux  = 0.0;
+
+// Bộ đếm thời gian Non-blocking (Không dùng delay làm nghẽn chương trình)
+unsigned long lastSensorReadTime = 0;
+unsigned long lastServerSendTime = 0;
+
+
+// ============================================================================
+// KHU 5: CÁC HÀM XỬ LÝ RELAY (ĐIỀU KHIỂN CỤC BỘ)
+// ============================================================================
+
+void initRelays() {
+  pinMode(RELAY_FAN_PIN,   OUTPUT);
+  pinMode(RELAY_PUMP_PIN,  OUTPUT);
+  pinMode(RELAY_LIGHT_PIN, OUTPUT);
+
+  // Mặc định khởi động tắt hết thiết bị để đảm bảo an toàn
+  digitalWrite(RELAY_FAN_PIN,   RELAY_OFF);
+  digitalWrite(RELAY_PUMP_PIN,  RELAY_OFF);
+  digitalWrite(RELAY_LIGHT_PIN, RELAY_OFF);
+}
+
+void setFan(bool enable) {
+  if (fanState == enable) return;
+  fanState = enable;
+  digitalWrite(RELAY_FAN_PIN, enable ? RELAY_ON : RELAY_OFF);
+  Serial.print("   -> [QUAT] ");
+  Serial.println(enable ? "BAT (Nhiet do cao)" : "TAT (Nhiet do on dinh)");
+}
+
+void setPump(bool enable) {
+  if (pumpState == enable) return;
+  pumpState = enable;
+  digitalWrite(RELAY_PUMP_PIN, enable ? RELAY_ON : RELAY_OFF);
+  Serial.print("   -> [BOM] ");
+  Serial.println(enable ? "BAT (Dat kho)" : "TAT (Da du am)");
+}
+
+void setLight(bool enable) {
+  if (lightState == enable) return;
+  lightState = enable;
+  digitalWrite(RELAY_LIGHT_PIN, enable ? RELAY_ON : RELAY_OFF);
+  Serial.print("   -> [DEN] ");
+  Serial.println(enable ? "BAT (Thieu anh sang)" : "TAT (Du anh sang)");
+}
+
+// Logic tự động quyết định trạng thái thiết bị cục bộ dựa trên số liệu cảm biến
+void runLocalAutomation() {
+  // 1. Quạt làm mát
+  if (currentTemp > TEMP_FAN_ON) {
+    setFan(true);
+  } else if (currentTemp <= TEMP_FAN_OFF) {
+    setFan(false);
+  }
+
+  // 2. Máy bơm tưới nước
+  if (currentHumidity >= 0) {
+    if (currentHumidity < PUMP_ON_THRESHOLD) {
+      setPump(true);
+    } else if (currentHumidity >= PUMP_OFF_THRESHOLD) {
+      setPump(false);
+    }
+  }
+
+  // 3. Đèn bổ sung ánh sáng cho cây
+  if (bh1750Connected && currentCalibLux >= 0) {
+    if (currentCalibLux < LIGHT_ON_THRESHOLD) {
+      setLight(true);   // Dưới 20.000 lux -> Bật đèn
+    } else if (currentCalibLux >= LIGHT_OFF_THRESHOLD) {
+      setLight(false);  // Từ 25.000 lux trở lên -> Tắt đèn
+    }
+  }
+}
+
+
+// ============================================================================
+// KHU 6: CÁC HÀM ĐỌC CẢM BIẾN (SENSOR DRIVERS)
+// ============================================================================
+
+void initSensors() {
+  // Khởi tạo DS18B20
+  ds18b20.begin();
+
+  // Khởi tạo I2C cho BH1750
+  Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
+  Wire.setTimeOut(1000);
+
+  if (lightMeter.begin(BH1750::CONTINUOUS_HIGH_RES_MODE)) {
+    bh1750Connected = true;
+    Serial.println("✓ [BH1750] Da ket noi cam bien anh sang I2C thanh cong!");
+  } else {
+    bh1750Connected = false;
+    Serial.println("⚠ [BH1750] Chua tim thay cam bien! Kiem tra day SDA/SCL/VCC/GND");
+  }
+}
+
+// Đọc nhiệt độ (°C) từ DS18B20
+float readTemperature() {
+  ds18b20.requestTemperatures();
+  float temp = ds18b20.getTempCByIndex(0);
+  if (temp == -127.00 || temp == DEVICE_DISCONNECTED_C) {
+    return -1.0; // Báo lỗi chưa cắm cảm biến
+  }
+  return temp;
+}
+
+// Đọc độ ẩm đất (%) từ cảm biến điện dung
+int readSoilHumidity() {
+  long sum = 0;
+  for (int i = 0; i < 5; i++) {
+    sum += analogRead(SOIL_ANALOG_PIN);
+    delay(10);
+  }
+  int adcVal = sum / 5;
+
+  if (adcVal < 100) return -1; // Cảm biến bị lỏng dây
+
+  int percent = map(adcVal, SOIL_DRY_ADC, SOIL_WET_ADC, 0, 100);
+  return constrain(percent, 0, 100);
+}
+
+// Đọc ánh sáng từ BH1750 và áp dụng công thức quy đổi
+void readLightData(float &rawLux, float &calibLux) {
+  if (!bh1750Connected) {
+    rawLux = -1.0;
+    calibLux = -1.0;
+    return;
+  }
+
+  float lux = lightMeter.readLightLevel();
+  if (lux < 0) {
+    rawLux = -1.0;
+    calibLux = -1.0;
+  } else {
+    rawLux = lux;
+    // Áp dụng công thức quy đổi sang dải cây trồng
+    calibLux = rawLux * LIGHT_SCALE_FACTOR;
+  }
+}
+
+// In toàn bộ dữ liệu ra Terminal của Arduino IDE (Serial Monitor)
+void printTerminalReport() {
+  Serial.println("==================== [ESP32 SENSOR TERMINAL] ====================");
+  
+  // 1. Nhiệt độ
+  Serial.print("🌡️  Nhiet do  : ");
+  if (currentTemp >= 0) {
+    Serial.print(currentTemp, 1);
+    Serial.print(" °C");
+    if (currentTemp > TEMP_FAN_ON) Serial.print("  [NONG -> Can bat quat]");
+    else if (currentTemp >= 22.0 && currentTemp <= 28.0) Serial.print("  [TOI UU (22-28°C)]");
+    Serial.println();
+  } else {
+    Serial.println("Loi ket noi DS18B20");
+  }
+
+  // 2. Độ ẩm đất
+  Serial.print("💧 Do am dat : ");
+  if (currentHumidity >= 0) {
+    Serial.print(currentHumidity);
+    Serial.print(" %");
+    if (currentHumidity < PUMP_ON_THRESHOLD) Serial.print("  [KHO -> Can bat bom]");
+    else if (currentHumidity >= 60 && currentHumidity <= 70) Serial.print("  [TOI UU (60-70%)]");
+    Serial.println();
+  } else {
+    Serial.println("Loi ket noi cam bien dat");
+  }
+
+  // 3. Ánh sáng
+  Serial.print("☀️  Anh sang  : ");
+  if (bh1750Connected && currentRawLux >= 0) {
+    Serial.print(currentCalibLux, 0);
+    Serial.print(" lux (Gia tri raw doc duoc: ");
+    Serial.print(currentRawLux, 1);
+    Serial.print(" lx * ");
+    Serial.print(LIGHT_SCALE_FACTOR, 1);
+    Serial.print(")");
+    
+    if (currentCalibLux < LIGHT_ON_THRESHOLD) {
+      Serial.print("  [THIEU SANG -> Bat den]");
+    } else if (currentCalibLux >= 25000.0 && currentCalibLux <= 40000.0) {
+      Serial.print("  [TOI UU (25k-40k lux)]");
+    } else if (currentCalibLux > 40000.0) {
+      Serial.print("  [THUA SANG (>40k lux)]");
+    }
+    Serial.println();
+  } else {
+    Serial.println("Chua ket noi BH1750");
+  }
+
+  // 4. Trạng thái Relay hiện tại
+  Serial.print("⚙️  Thiet bi  : ");
+  Serial.print("Quat ["); Serial.print(fanState ? "BAT" : "TAT"); Serial.print("] | ");
+  Serial.print("Bom [");  Serial.print(pumpState ? "BAT" : "TAT"); Serial.print("] | ");
+  Serial.print("Den [");  Serial.print(lightState ? "BAT" : "TAT"); Serial.println("]");
+  
+  Serial.println("=================================================================\n");
+}
+
+
+// ============================================================================
+// KHU 7: QUẢN LÝ KẾT NỐI WIFI
+// ============================================================================
+
+void setupWiFi() {
+  Serial.print("\n[WIFI] Dang ket noi den: ");
+  Serial.println(WIFI_SSID);
+
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+
+  int count = 0;
+  while (WiFi.status() != WL_CONNECTED && count < 20) {
+    delay(500);
+    Serial.print(".");
+    count++;
+  }
+
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.println("\n✓ [WIFI] Da ket noi thanh cong!");
+    Serial.print("   IP: ");
+    Serial.println(WiFi.localIP());
+  } else {
+    Serial.println("\n⚠ [WIFI] Ket noi that bai! ESP32 se tiep tuc chay cuc bo va thu lai sau.");
+  }
+}
+
+void checkWiFiConnection() {
+  if (WiFi.status() != WL_CONNECTED) {
+    WiFi.reconnect();
+  }
+}
+
+
+// ============================================================================
+// KHU 8: GỬI DỮ LIỆU LÊN SERVER CLOUD (HTTP POST JSON)
+// ============================================================================
+
+void sendDataToServer() {
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("📡 [CLOUD] Khong co WiFi, bo qua luot gui nay.");
+    return;
+  }
+
+  Serial.println("📡 [CLOUD] Dang gui du lieu len Server...");
+
+  WiFiClientSecure client;
+  client.setInsecure(); // Bỏ qua kiểm tra SSL cert để gửi HTTPS ổn định
+
+  HTTPClient http;
+  if (http.begin(client, SERVER_URL)) {
+    http.addHeader("Content-Type", "application/json");
+    http.setTimeout(HTTP_TIMEOUT);
+
+    // Đóng gói JSON gửi dữ liệu cảm biến
+    StaticJsonDocument<256> doc;
+    doc["vuon_id"]     = VUON_ID;
+    doc["temperature"] = (currentTemp >= 0) ? currentTemp : 25.0;
+    doc["humidity"]    = (currentHumidity >= 0) ? currentHumidity : 0;
+    // Gửi giá trị lux đã được tính toán theo dải cây trồng
+    doc["light"]       = (currentCalibLux >= 0) ? round(currentCalibLux) : -1;
+
+    String body;
+    serializeJson(doc, body);
+
+    int httpCode = http.POST(body);
+
+    if (httpCode == 200) {
+      Serial.print("✓ [CLOUD] Gui thanh cong (HTTP 200). Lux gui len: ");
+      Serial.println(doc["light"].as<float>());
+    } else {
+      Serial.print("⚠ [CLOUD] Loi HTTP POST: ");
+      Serial.println(httpCode);
+    }
+
+    http.end();
+  } else {
+    Serial.println("⚠ [CLOUD] Khong the khoi tao ket noi HTTPS!");
+  }
+
+  client.stop(); // Giải phóng socket tránh tràn bộ nhớ RAM
+}
+
+
+// ============================================================================
+// KHU 9: SETUP CHÍNH & VÒNG LẶP LOOP
+// ============================================================================
+
 void setup() {
   Serial.begin(115200);
-  delay(2000);
+  delay(1500);
 
-  Serial.println("========================================");
-  Serial.println("  ESP32 - IoT Nong Nghiep v3           ");
-  Serial.println("  Bom tu dong: Hysteresis Control       ");
-  Serial.println("========================================");
+  Serial.println("\n\n");
+  Serial.println("###################################################");
+  Serial.println("#  HE THONG IOT NONG NGHIEP - DIEU KHIEN CUC BO   #");
+  Serial.println("#  QUAT (IO18) | BOM (IO19) | DEN (IO21)          #");
+  Serial.println("###################################################");
 
-  // Relay: TẮT hết khi khởi động tránh kích nhầm
-  pinMode(RELAY_FAN_PIN,  OUTPUT);
-  pinMode(RELAY_PUMP_PIN, OUTPUT);
-  digitalWrite(RELAY_FAN_PIN,  RELAY_OFF);
-  digitalWrite(RELAY_PUMP_PIN, RELAY_OFF);
+  // 1. Khởi tạo Relay
+  initRelays();
 
-  ds18b20.begin();
-  connectWiFi();
+  // 2. Khởi tạo Cảm biến
+  initSensors();
+
+  // 3. Kết nối WiFi
+  setupWiFi();
+
+  Serial.println("-> He thong da san sang chay!\n");
 }
 
-// ============================================================
-// LOOP CHÍNH
-// ============================================================
 void loop() {
-  if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("Wifi mat ket noi — thu lai...");
-    connectWiFi();
-    return;
+  unsigned long now = millis();
+
+  // -------------------------------------------------------------
+  // CHU KỲ 1: ĐỌC CẢM BIẾN, IN TERMINAL & ĐIỀU KHIỂN CỤC BỘ
+  // (Chạy mỗi SENSOR_READ_INTERVAL_MS = 2 giây)
+  // -------------------------------------------------------------
+  if (now - lastSensorReadTime >= SENSOR_READ_INTERVAL_MS) {
+    lastSensorReadTime = now;
+
+    // 1. Đọc dữ liệu từ tất cả cảm biến
+    currentTemp = readTemperature();
+    currentHumidity = readSoilHumidity();
+    readLightData(currentRawLux, currentCalibLux);
+
+    // 2. In đầy đủ ra Terminal của Arduino IDE
+    printTerminalReport();
+
+    // 3. Tự động điều khiển Quạt, Bơm, Đèn theo số liệu vừa đọc
+    runLocalAutomation();
   }
 
-  // 1. Đọc cảm biến
-  float temperature = readTemperature();
-  int   humidity    = readHumidity();
+  // -------------------------------------------------------------
+  // CHU KỲ 2: GỬI DỮ LIỆU LÊN SERVER ĐỂ LƯU LỊCH SỬ & VẼ BIỂU ĐỒ WEB
+  // (Chạy mỗi SERVER_SEND_INTERVAL_MS = 15 giây, không gửi liên tục)
+  // -------------------------------------------------------------
+  if (now - lastServerSendTime >= SERVER_SEND_INTERVAL_MS) {
+    lastServerSendTime = now;
 
-  if (humidity < 0) {
-    Serial.println("Cam bien do am chua ket noi (ADC < 100). Bo qua...");
-    delay(3000);
-    return;
-  }
-
-  printSensorData(temperature, humidity);
-
-  // 2. Xử lý máy bơm (chỉ khi không ở chế độ manual)
-  if (!isManualMode) {
-    if (humidity < PUMP_ON_THRESHOLD) {
-      // Vào vòng bơm — chạy đến khi đủ ẩm rồi mới thoát
-      runPumpUntilWet();
-
-      // Đọc lại sau khi bơm xong để gửi số liệu chính xác
-      temperature = readTemperature();
-      humidity    = readHumidity();
-      if (humidity < 0) humidity = PUMP_OFF_THRESHOLD; // Fallback an toàn
-    }
-  }
-
-  // 3. Gửi dữ liệu lên server (sau khi bơm xong)
-  //    Server sẽ trả về lệnh quạt + trạng thái manual
-  sendDataAndControl(temperature, humidity);
-
-  delay(LOOP_DELAY_MS);
-}
-
-// ============================================================
-// VÒNG BƠM: chạy cho đến khi độ ẩm đạt PUMP_OFF_THRESHOLD
-// ============================================================
-void runPumpUntilWet() {
-  Serial.println("");
-  Serial.println("===========================================");
-  Serial.println("[BOM] Do am thap! Bat may bom...");
-  Serial.print  ("[BOM] Bat bom khi: < "); Serial.print(PUMP_ON_THRESHOLD); Serial.println("%");
-  Serial.print  ("[BOM] Tat bom khi: >= "); Serial.print(PUMP_OFF_THRESHOLD); Serial.println("%");
-  Serial.println("===========================================");
-
-  setPump(true);
-
-  unsigned long startTime = millis();
-  int currentHumidity = readHumidityFast();
-
-  while (currentHumidity < PUMP_OFF_THRESHOLD) {
-    // Kiểm tra timeout an toàn (tránh tràn nước)
-    if (millis() - startTime > PUMP_MAX_DURATION_MS) {
-      Serial.println("[BOM] CANH BAO: Da dat thoi gian bom toi da (5 phut)! Tat bom.");
-      break;
-    }
-
-    Serial.print("[BOM] Dang bom... Do am hien tai: ");
-    Serial.print(currentHumidity);
-    Serial.print("% | Muc tieu: ");
-    Serial.print(PUMP_OFF_THRESHOLD);
-    Serial.println("%");
-
-    delay(PUMP_RECHECK_MS);
-    currentHumidity = readHumidityFast();
-  }
-
-  setPump(false);
-
-  unsigned long duration = (millis() - startTime) / 1000;
-  Serial.println("===========================================");
-  Serial.print  ("[BOM] Bom xong! Do am dat: ");
-  Serial.print  (currentHumidity); Serial.println("%");
-  Serial.print  ("[BOM] Thoi gian bom: "); Serial.print(duration); Serial.println(" giay");
-  Serial.println("[BOM] Gui du lieu len server...");
-  Serial.println("===========================================\n");
-}
-
-// ============================================================
-// ĐỌC NHIỆT ĐỘ (Trung bình NUM_SAMPLES lần)
-// ============================================================
-float readTemperature() {
-  float sum   = 0;
-  int   count = 0;
-  for (int i = 0; i < NUM_SAMPLES; i++) {
-    ds18b20.requestTemperatures();
-    float t = ds18b20.getTempCByIndex(0);
-    if (t != -127.00 && t != DEVICE_DISCONNECTED_C) {
-      sum += t;
-      count++;
-    }
-    delay(SAMPLE_DELAY_MS);
-  }
-  if (count == 0) {
-    Serial.println("DS18B20 loi! Dung gia tri 25.0°C.");
-    return 25.0;
-  }
-  return sum / count;
-}
-
-// ============================================================
-// ĐỌC ĐỘ ẨM ĐẤT (Trung bình NUM_SAMPLES lần — chính xác)
-// Trả về -1 nếu cảm biến chưa cắm
-// ============================================================
-int readHumidity() {
-  long adcSum = 0;
-  for (int i = 0; i < NUM_SAMPLES; i++) {
-    adcSum += analogRead(SOIL_PIN);
-    delay(SAMPLE_DELAY_MS);
-  }
-  int adcAvg = adcSum / NUM_SAMPLES;
-  if (adcAvg < 100) return -1;
-  return constrain(map(adcAvg, DRY_ADC, WET_ADC, 0, 100), 0, 100);
-}
-
-// ============================================================
-// ĐỌC ĐỘ ẨM ĐẤT NHANH (3 mẫu — dùng trong vòng bơm)
-// ============================================================
-int readHumidityFast() {
-  long adcSum = 0;
-  const int FAST_SAMPLES = 3;
-  for (int i = 0; i < FAST_SAMPLES; i++) {
-    adcSum += analogRead(SOIL_PIN);
-    delay(100);
-  }
-  int adcAvg = adcSum / FAST_SAMPLES;
-  if (adcAvg < 100) return 0;
-  return constrain(map(adcAvg, DRY_ADC, WET_ADC, 0, 100), 0, 100);
-}
-
-// ============================================================
-// ĐẶT TRẠNG THÁI RELAY (chỉ gọi digitalWrite khi state thay đổi)
-// ============================================================
-void setFan(bool on) {
-  if (on == currentFanState) return;
-  currentFanState = on;
-  digitalWrite(RELAY_FAN_PIN, on ? RELAY_ON : RELAY_OFF);
-  Serial.print("Quat: "); Serial.println(on ? "BAT" : "TAT");
-}
-
-void setPump(bool on) {
-  if (on == currentPumpState) return;
-  currentPumpState = on;
-  digitalWrite(RELAY_PUMP_PIN, on ? RELAY_ON : RELAY_OFF);
-  Serial.print("May bom: "); Serial.println(on ? "BAT" : "TAT");
-}
-
-// ============================================================
-// GỬI DỮ LIỆU → NHẬN LỆNH ĐIỀU KHIỂN QUẠT / MANUAL
-// ============================================================
-void sendDataAndControl(float temperature, int humidity) {
-  HTTPClient http;
-  http.begin(SERVER_URL);
-  http.addHeader("Content-Type", "application/json");
-  http.setTimeout(HTTP_TIMEOUT_MS);
-
-  StaticJsonDocument<256> reqDoc;
-  reqDoc["vuon_id"]     = VUON_ID;
-  reqDoc["temperature"] = temperature;
-  reqDoc["humidity"]    = humidity;
-  reqDoc["light"]       = -1;       // BH1750 chưa kết nối
-  reqDoc["pump_state"]  = currentPumpState;
-
-  String body;
-  serializeJson(reqDoc, body);
-
-  int httpCode = http.POST(body);
-
-  if (httpCode == 200) {
-    String payload = http.getString();
-    Serial.print("Server: "); Serial.println(payload);
-
-    StaticJsonDocument<128> resDoc;
-    DeserializationError err = deserializeJson(resDoc, payload);
-
-    if (!err) {
-      // Cập nhật chế độ manual (nếu người dùng bật trên web)
-      isManualMode = resDoc["manual"] | false;
-
-      // Quạt do server quyết định (dựa trên nhiệt độ)
-      setFan(resDoc["fan_state"] | false);
-
-      // Nếu đang manual: server cũng kiểm soát bơm
-      if (isManualMode) {
-        setPump(resDoc["pump_state"] | false);
-      }
-    } else {
-      Serial.print("Loi parse JSON: "); Serial.println(err.c_str());
-    }
-  } else {
-    Serial.print("Loi POST HTTP "); Serial.println(httpCode);
-  }
-
-  http.end();
-}
-
-// ============================================================
-// IN DỮ LIỆU RA SERIAL MONITOR
-// ============================================================
-void printSensorData(float temperature, int humidity) {
-  Serial.println("===== SENSOR DATA =====");
-  Serial.print("Nhiet do  : "); Serial.print(temperature, 2); Serial.println(" C");
-  Serial.print("Do am dat : "); Serial.print(humidity);       Serial.println(" %");
-  Serial.print("Quat      : "); Serial.println(currentFanState  ? "BAT" : "TAT");
-  Serial.print("May bom   : "); Serial.println(currentPumpState ? "BAT" : "TAT");
-  Serial.print("Che do    : "); Serial.println(isManualMode ? "MANUAL (Web)" : "TU DONG");
-  Serial.println("=======================");
-}
-
-// ============================================================
-// KẾT NỐI WiFi (Có Retry)
-// ============================================================
-void connectWiFi() {
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-  int retries = 0;
-  Serial.print("Dang ket noi WiFi");
-  while (WiFi.status() != WL_CONNECTED && retries < 20) {
-    delay(1000);
-    Serial.print(".");
-    retries++;
-  }
-  if (WiFi.status() == WL_CONNECTED) {
-    Serial.println("\nWiFi OK! IP: " + WiFi.localIP().toString());
-  } else {
-    Serial.println("\nWiFi that bai. Thu lai sau...");
+    checkWiFiConnection();
+    sendDataToServer();
   }
 }
