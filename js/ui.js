@@ -90,16 +90,8 @@ function showToast(message) {
 }
 
 function goBack() {
-  // Stop camera if running
-  const video = document.getElementById('camera');
-  if (video && video.srcObject) {
-    video.srcObject.getTracks().forEach(t => t.stop());
-    video.srcObject = null;
-    video.classList.add('hidden');
+  if (typeof window.stopCamera === 'function') {
+    window.stopCamera();
   }
-  // Reset camera button
-  const btn = document.getElementById('camera-btn');
-  if (btn) { btn.textContent = 'Chụp ảnh'; btn.onclick = window.startCamera; }
-
   showScreen('user-type-screen');
 }

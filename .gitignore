@@ -69,3 +69,13 @@ instance/
 # Camera local configs
 camera_config.json
 
+# Raw Heavy Datasets & Temp Logs
+thucdiatest/
+thucdiatest_augmented/
+research_archive/test_thucte/
+research_archive/ket_qua_augmented/
+all_user_inputs.json
+git_log_history.txt
+git_log_utf8.txt
+
+

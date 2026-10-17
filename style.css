@@ -224,3 +224,31 @@ body { box-sizing: border-box; }
         filter: blur(8px);
     }
 }
+
+/* ============================================================
+   VIBRANT MULTI-COLOR THEME & ANIMATIONS (Thầy giáo yêu cầu đa sắc)
+   ============================================================ */
+@keyframes rainbowFlow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.rainbow-gradient {
+    background: linear-gradient(135deg, #10B981, #06B6D4, #F59E0B, #EC4899, #8B5CF6);
+    background-size: 300% 300%;
+    animation: rainbowFlow 8s ease infinite;
+}
+
+.rainbow-glow {
+    box-shadow: 0 10px 30px -10px rgba(16, 185, 129, 0.4), 
+                0 10px 30px -10px rgba(6, 182, 212, 0.3), 
+                0 10px 30px -10px rgba(245, 158, 11, 0.3);
+}
+
+.sample-leaf-btn {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.sample-leaf-btn:hover {
+    transform: translateY(-2px);
+}

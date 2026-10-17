@@ -1,78 +1,187 @@
-<!-- ========== MÀN HÌNH CÁ NHÂN ========== -->
-<div id="personal-screen" class="hidden min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden">
+<!-- ========== MÀN HÌNH CÁ NHÂN (CHẨN ĐOÁN AI ĐA SẮC) ========== -->
+<div id="personal-screen" class="hidden min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 relative overflow-hidden">
   
-  <!-- Abstract Leaf Background -->
-  <div class="absolute inset-0 z-0 bg-[#F4F9F4]">
-    <div class="absolute top-[-10%] right-[-5%] w-96 h-96 bg-[#CDE4D6] rounded-full blur-3xl opacity-50"></div>
-    <div class="absolute bottom-[-10%] left-[-5%] w-80 h-80 bg-[#52B788] rounded-full blur-3xl opacity-20"></div>
+  <!-- Multi-Color Vibrant Background Mesh -->
+  <div class="absolute inset-0 z-0 bg-[#F8FAF9] overflow-hidden pointer-events-none">
+    <div class="absolute -top-20 -left-20 w-80 h-80 sm:w-96 sm:h-96 bg-gradient-to-tr from-emerald-400 to-teal-300 rounded-full blur-3xl opacity-40 animate-float"></div>
+    <div class="absolute top-1/4 -right-20 w-80 h-80 sm:w-96 sm:h-96 bg-gradient-to-bl from-amber-300 via-orange-400 to-rose-400 rounded-full blur-3xl opacity-35 animate-float-slow"></div>
+    <div class="absolute -bottom-20 left-10 w-80 h-80 sm:w-96 sm:h-96 bg-gradient-to-tr from-cyan-400 via-sky-500 to-indigo-500 rounded-full blur-3xl opacity-30 animate-sway"></div>
+    <div class="absolute top-1/2 left-1/3 w-64 h-64 bg-gradient-to-br from-fuchsia-400 to-purple-500 rounded-full blur-3xl opacity-20"></div>
   </div>
 
   <div class="w-full max-w-md z-10 relative">
-    <button type="button" onclick="goBack()" class="mb-6 flex items-center gap-2 text-[#2D6A4F] hover:text-[#1B4332] font-semibold transition-colors bg-white/50 px-4 py-2 rounded-full backdrop-blur-sm w-fit border border-white/60 shadow-sm">
-      <i data-lucide="arrow-left" class="w-5 h-5"></i>
-      <span>Quay lại</span>
-    </button>
     
-    <div class="text-center mb-6">
-      <h2 class="text-3xl font-bold font-sans text-[#1B4332] mb-2 drop-shadow-sm">Chẩn đoán AI</h2>
-      <p class="text-[#2D6A4F] text-sm font-medium">Chụp hoặc tải lên ảnh lá cây để phân tích dinh dưỡng</p>
+    <!-- Top Bar with Back & Colorful Badge -->
+    <div class="flex items-center justify-between mb-4">
+      <button type="button" onclick="goBack()" class="flex items-center gap-2 text-slate-700 hover:text-emerald-700 font-semibold transition-all bg-white/70 hover:bg-white px-4 py-2 rounded-full backdrop-blur-md border border-white/80 shadow-sm hover:shadow">
+        <i data-lucide="arrow-left" class="w-4 h-4 text-emerald-600"></i>
+        <span class="text-xs sm:text-sm">Quay lại</span>
+      </button>
+
+      <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/80 backdrop-blur-md border border-white/80 shadow-sm text-[11px] font-semibold">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span class="bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 bg-clip-text text-transparent font-bold">AI Multi-Nutrient</span>
+      </div>
+    </div>
+    
+    <!-- Title & Multi-Nutrient Color Palette -->
+    <div class="text-center mb-4">
+      <h2 class="text-2xl sm:text-3xl font-extrabold font-sans mb-1.5 tracking-tight bg-gradient-to-r from-emerald-800 via-teal-700 to-cyan-800 bg-clip-text text-transparent drop-shadow-sm">
+        Chẩn đoán Dinh dưỡng AI
+      </h2>
+      <p class="text-slate-600 text-xs sm:text-sm font-medium">Chụp hoặc chọn mẫu lá cây để AI phân tích thiếu hụt dinh dưỡng</p>
+      
+      <!-- Multi-Color Nutrient Spectrum Banner -->
+      <div class="flex items-center justify-center gap-1.5 flex-wrap mt-2.5">
+        <span class="px-2 py-0.5 rounded-md text-[10px] font-bold text-white bg-emerald-500 shadow-xs shadow-emerald-500/20" title="Đạm (N)">N · Đạm</span>
+        <span class="px-2 py-0.5 rounded-md text-[10px] font-bold text-white bg-pink-500 shadow-xs shadow-pink-500/20" title="Lân (P)">P · Lân</span>
+        <span class="px-2 py-0.5 rounded-md text-[10px] font-bold text-white bg-amber-500 shadow-xs shadow-amber-500/20" title="Kali (K)">K · Kali</span>
+        <span class="px-2 py-0.5 rounded-md text-[10px] font-bold text-white bg-blue-500 shadow-xs shadow-blue-500/20" title="Canxi (Ca)">Ca · Canxi</span>
+        <span class="px-2 py-0.5 rounded-md text-[10px] font-bold text-white bg-yellow-500 shadow-xs shadow-yellow-500/20" title="Lưu huỳnh (S)">S · Lưu huỳnh</span>
+        <span class="px-2 py-0.5 rounded-md text-[10px] font-bold text-white bg-purple-500 shadow-xs shadow-purple-500/20" title="Mangan (Mn)">Mn · Mangan</span>
+        <span class="px-2 py-0.5 rounded-md text-[10px] font-bold text-white bg-cyan-600 shadow-xs shadow-cyan-600/20" title="Kẽm (Zn)">Zn · Kẽm</span>
+      </div>
     </div>
 
-    <div class="w-full aspect-square border-2 border-dashed border-[#52B788] rounded-[32px] flex items-center justify-center bg-white/60 backdrop-blur-md mb-6 overflow-hidden relative shadow-inner hover:bg-white/80 transition-colors duration-300">
-      <!-- Decorative scanning line (hidden by default, shown during scan) -->
-      <div id="scan-line" class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#52B788] to-transparent shadow-[0_0_15px_#52B788] hidden z-20"></div>
+    <!-- Center AI Scanning Box with Iridescent Border -->
+    <div class="relative w-full aspect-square rounded-[34px] p-[3px] bg-gradient-to-tr from-emerald-400 via-cyan-400 via-amber-400 to-rose-400 shadow-2xl shadow-emerald-500/15 mb-3 group">
       
-      <!-- Default SVG Image before upload -->
-      <img id="preview-image" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 24 24' fill='none' stroke='%2352B788' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 22C17.5 22 22 17.5 22 12C22 6.5 17.5 2 12 2C6.5 2 2 6.5 2 12C2 17.5 6.5 22 12 22Z'/%3E%3Cpath d='M12 2V22'/%3E%3Cpath d='M12 12C9 9 5.5 8 2.5 8'/%3E%3Cpath d='M12 12C15 9 18.5 8 21.5 8'/%3E%3C/svg%3E" class="max-h-full max-w-full object-contain drop-shadow-sm transition-all duration-300 p-8 opacity-60"/>
+      <div class="w-full h-full rounded-[31px] bg-slate-900/90 backdrop-blur-md overflow-hidden relative flex items-center justify-center">
+        
+        <!-- Animated Corner Viewfinder Reticles (Multi-color) -->
+        <div class="absolute top-4 left-4 w-6 h-6 border-t-[3px] border-l-[3px] border-cyan-400 rounded-tl-lg pointer-events-none z-10"></div>
+        <div class="absolute top-4 right-4 w-6 h-6 border-t-[3px] border-r-[3px] border-emerald-400 rounded-tr-lg pointer-events-none z-10"></div>
+        <div class="absolute bottom-4 left-4 w-6 h-6 border-b-[3px] border-l-[3px] border-amber-400 rounded-bl-lg pointer-events-none z-10"></div>
+        <div class="absolute bottom-4 right-4 w-6 h-6 border-b-[3px] border-r-[3px] border-rose-400 rounded-br-lg pointer-events-none z-10"></div>
+
+        <!-- Decorative Multi-Color Scanning Line (shown during scan) -->
+        <div id="scan-line" class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-cyan-400 via-emerald-400 via-amber-400 to-transparent shadow-[0_0_18px_#10b981] hidden z-30"></div>
+
+        <!-- Active Badge on Preview -->
+        <div id="preview-badge" class="absolute top-3.5 left-3.5 px-3 py-1 rounded-full text-[11px] font-bold bg-slate-950/75 text-emerald-300 backdrop-blur-md border border-emerald-400/30 flex items-center gap-1.5 shadow-md z-20">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+          <span>🌿 Mẫu lá thực tế (test_thucte)</span>
+        </div>
+
+        <!-- Specimen / Preview Image (Populated with real research image by default) -->
+        <img id="preview-image" src="assets/samples/sample_thucte_1.jpg" alt="Mẫu chẩn đoán AI" class="w-full h-full object-cover transition-all duration-300 select-none">
+
+        <!-- Embedded Camera Live Viewfinder -->
+        <div id="camera-wrapper" class="absolute inset-0 hidden flex flex-col z-20 bg-black">
+          <video id="camera" class="w-full h-full object-cover" autoplay playsinline muted></video>
+          
+          <!-- Top Floating Bar for Camera Controls -->
+          <div class="absolute top-3 left-3 right-3 flex items-center justify-between z-30">
+            <!-- Switch Front / Rear Camera Button -->
+            <button type="button" id="camera-switch-btn" onclick="switchCamera()" class="px-3 py-1.5 rounded-full bg-slate-900/80 hover:bg-slate-900 text-white backdrop-blur-md text-xs font-semibold border border-white/20 flex items-center gap-1.5 shadow-lg active:scale-95 transition-all">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-cyan-400"></i>
+              <span id="camera-facing-label">Cam sau</span>
+            </button>
+
+            <!-- Close Camera Viewfinder Button -->
+            <button type="button" onclick="stopCamera()" class="w-8 h-8 rounded-full bg-slate-900/80 hover:bg-rose-600 text-white backdrop-blur-md flex items-center justify-center border border-white/20 shadow-lg active:scale-95 transition-all" title="Đóng camera">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+          <!-- Bottom Floating Bar for Snap Button -->
+          <div class="absolute bottom-4 inset-x-0 flex items-center justify-center z-30">
+            <button type="button" onclick="capturePhoto()" class="w-16 h-16 rounded-full border-4 border-white bg-gradient-to-tr from-emerald-500 to-teal-400 text-white flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition-all" title="Chụp ảnh ngay">
+              <i data-lucide="camera" class="w-7 h-7"></i>
+            </button>
+          </div>
+        </div>
+
+      </div>
     </div>
     
+    <!-- Quick Sample Selector from research_archive / test_thucte -->
+    <div class="mb-4 bg-white/70 backdrop-blur-md rounded-2xl p-2.5 border border-white/80 shadow-sm">
+      <div class="flex items-center justify-between mb-2 px-1">
+        <span class="text-[11px] font-bold text-slate-700 flex items-center gap-1">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500"></i>
+          Chọn mẫu thực tế (test_thucte) hoặc minh họa:
+        </span>
+        <span class="text-[10px] text-emerald-600 font-semibold">Chạm để chọn</span>
+      </div>
+      <div class="grid grid-cols-4 gap-2">
+        <button type="button" onclick="selectSampleImage('assets/samples/sample_thucte_1.jpg', 'Mẫu thực tế 1 (test_thucte)', this)" class="sample-leaf-btn ring-2 ring-emerald-500 group relative rounded-xl overflow-hidden border border-slate-200/80 aspect-[4/3] bg-slate-100 hover:shadow-md transition-all">
+          <img src="assets/samples/sample_thucte_1.jpg" alt="Mẫu 1" class="w-full h-full object-cover group-hover:scale-110 transition-transform">
+          <div class="absolute inset-x-0 bottom-0 bg-slate-900/75 text-[9px] font-bold text-white py-0.5 text-center">Mẫu 1</div>
+        </button>
+        <button type="button" onclick="selectSampleImage('assets/samples/sample_thucte_2.jpg', 'Mẫu thực tế 2 (test_thucte)', this)" class="sample-leaf-btn group relative rounded-xl overflow-hidden border border-slate-200/80 aspect-[4/3] bg-slate-100 hover:shadow-md transition-all">
+          <img src="assets/samples/sample_thucte_2.jpg" alt="Mẫu 2" class="w-full h-full object-cover group-hover:scale-110 transition-transform">
+          <div class="absolute inset-x-0 bottom-0 bg-slate-900/75 text-[9px] font-bold text-white py-0.5 text-center">Mẫu 2</div>
+        </button>
+        <button type="button" onclick="selectSampleImage('assets/samples/sample_thucte_3.jpg', 'Mẫu thực tế 3 (test_thucte)', this)" class="sample-leaf-btn group relative rounded-xl overflow-hidden border border-slate-200/80 aspect-[4/3] bg-slate-100 hover:shadow-md transition-all">
+          <img src="assets/samples/sample_thucte_3.jpg" alt="Mẫu 3" class="w-full h-full object-cover group-hover:scale-110 transition-transform">
+          <div class="absolute inset-x-0 bottom-0 bg-slate-900/75 text-[9px] font-bold text-white py-0.5 text-center">Mẫu 3</div>
+        </button>
+        <button type="button" onclick="selectSampleImage('assets/samples/illustration_leaf.png', 'Ảnh minh họa đa chất', this)" class="sample-leaf-btn group relative rounded-xl overflow-hidden border border-slate-200/80 aspect-[4/3] bg-slate-100 hover:shadow-md transition-all">
+          <img src="assets/samples/illustration_leaf.png" alt="Minh họa" class="w-full h-full object-cover group-hover:scale-110 transition-transform">
+          <div class="absolute inset-x-0 bottom-0 bg-purple-900/80 text-[9px] font-bold text-white py-0.5 text-center">Minh họa</div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Hidden native inputs -->
     <input type="file" id="imageInput" accept="image/*" class="hidden">
-    <video id="camera" class="hidden w-full rounded-[32px] mb-6 shadow-lg object-cover aspect-square border-4 border-white/50" autoplay playsinline></video>
+    <input type="file" id="mobileCameraInput" accept="image/*" capture="environment" class="hidden">
     <canvas id="canvas" class="hidden"></canvas>
     
-    <div class="flex gap-3 w-full mb-6">
-      <button onclick="chooseImage()" class="flex-1 glass-card border border-white/60 hover:bg-white text-slate-700 py-3.5 rounded-[20px] font-medium transition-all shadow-sm hover:shadow-md flex flex-col items-center gap-1.5 group">
-        <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center group-hover:scale-110 transition-transform">
-          <i data-lucide="image" class="w-5 h-5 text-blue-500"></i>
+    <!-- 3 Main Interactive Action Buttons -->
+    <div class="flex gap-2.5 sm:gap-3 w-full mb-6">
+      
+      <!-- Button 1: Thư viện (Gallery) -->
+      <button type="button" onclick="chooseImage()" class="flex-1 bg-white/80 hover:bg-white border border-sky-200 hover:border-sky-400 text-slate-700 py-3 rounded-[20px] font-medium transition-all shadow-sm hover:shadow-md flex flex-col items-center gap-1.5 group active:scale-95">
+        <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-sky-400 to-blue-600 text-white flex items-center justify-center group-hover:scale-110 transition-transform shadow-md shadow-blue-500/25">
+          <i data-lucide="image" class="w-5 h-5"></i>
         </div>
-        <span class="text-xs font-bold text-slate-600">Thư viện</span>
+        <span class="text-xs font-bold text-slate-700">Thư viện</span>
       </button>
       
-      <button id="camera-btn" onclick="startCamera()" class="flex-1 glass-card border border-white/60 hover:bg-white text-slate-700 py-3.5 rounded-[20px] font-medium transition-all shadow-sm hover:shadow-md flex flex-col items-center gap-1.5 group">
-        <div class="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center group-hover:scale-110 transition-transform">
-          <i data-lucide="camera" class="w-5 h-5 text-emerald-500"></i>
+      <!-- Button 2: Chụp ảnh (Camera với Camera Sau mặc định + Fallback điện thoại) -->
+      <button type="button" id="camera-btn" onclick="startCamera()" class="flex-1 bg-white/80 hover:bg-white border border-emerald-200 hover:border-emerald-400 text-slate-700 py-3 rounded-[20px] font-medium transition-all shadow-sm hover:shadow-md flex flex-col items-center gap-1.5 group active:scale-95">
+        <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-emerald-400 to-teal-600 text-white flex items-center justify-center group-hover:scale-110 transition-transform shadow-md shadow-emerald-500/25">
+          <i data-lucide="camera" class="w-5 h-5"></i>
         </div>
-        <span class="text-xs font-bold text-slate-600">Chụp ảnh</span>
+        <span class="text-xs font-bold text-slate-700">Chụp ảnh</span>
       </button>
       
-      <button onclick="scanAI()" class="flex-1 bg-gradient-to-br from-[#2D6A4F] to-[#52B788] hover:from-[#1B4332] hover:to-[#40916C] text-white py-3.5 rounded-[20px] font-bold transition-all shadow-lg shadow-[#52B788]/30 flex flex-col items-center gap-1.5 transform hover:-translate-y-1">
-        <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center relative overflow-hidden">
-          <div class="absolute inset-0 bg-white/20 opacity-0 hover:opacity-100 transition-opacity"></div>
-          <i data-lucide="sparkles" class="w-5 h-5 text-white"></i>
+      <!-- Button 3: Quét AI (Multi-color gradient button) -->
+      <button type="button" onclick="scanAI()" class="flex-1 bg-gradient-to-r from-emerald-600 via-teal-600 to-indigo-600 hover:from-emerald-500 hover:via-teal-500 hover:to-indigo-500 text-white py-3 rounded-[20px] font-bold transition-all shadow-lg shadow-emerald-600/30 flex flex-col items-center gap-1.5 transform hover:-translate-y-0.5 active:scale-95 group">
+        <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center relative overflow-hidden group-hover:scale-110 transition-transform shadow-inner">
+          <i data-lucide="sparkles" class="w-5 h-5 text-amber-200"></i>
         </div>
-        <span class="text-xs font-bold">Quét AI</span>
+        <span class="text-xs font-extrabold tracking-wide">Quét AI</span>
       </button>
+
     </div>
     
-    <div id="ai-result-box" class="hidden w-full glass-card rounded-[24px] border border-white/60 shadow-lg p-6 analysis-result">
-      <div id="ai-loading" class="flex items-center gap-3 text-slate-500">
-        <svg class="animate-spin w-6 h-6 text-[#2D6A4F]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+    <!-- AI Results Section -->
+    <div id="ai-result-box" class="hidden w-full glass-card rounded-[24px] border border-white/70 shadow-xl p-5 sm:p-6 analysis-result">
+      <div id="ai-loading" class="flex items-center gap-3 text-slate-600 py-2">
+        <svg class="animate-spin w-6 h-6 text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
           <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
         </svg>
-        <span class="font-bold text-[#2D6A4F]">AI đang phân tích mẫu lá...</span>
+        <span class="font-bold text-emerald-800">AI đang phân tích mẫu lá và tạo bản đồ nhiệt (Heatmap)...</span>
       </div>
       <div id="ai-result-content" class="hidden">
-        <div class="flex items-center gap-3 mb-4">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#E6F2EB] to-[#CDE4D6] flex items-center justify-center shadow-inner">
-            <i data-lucide="microscope" class="w-5 h-5 text-[#2D6A4F]"></i>
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center shadow-md text-white">
+              <i data-lucide="microscope" class="w-5 h-5"></i>
+            </div>
+            <h3 class="font-bold font-sans text-base sm:text-lg text-slate-800">Kết quả chẩn đoán chi tiết</h3>
           </div>
-          <h3 class="font-bold font-sans text-lg text-[#1B4332]">Kết quả chẩn đoán</h3>
+          <span class="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full">ResNet-18 + GradCAM</span>
         </div>
-        <div class="bg-white/50 rounded-xl p-4 border border-white/40 shadow-inner">
+        <div class="bg-white/70 rounded-2xl p-4 border border-white/60 shadow-inner">
           <p id="ai-result-text" class="text-sm text-slate-700 font-medium leading-relaxed whitespace-pre-wrap"></p>
         </div>
       </div>
     </div>
+
   </div>
 </div>

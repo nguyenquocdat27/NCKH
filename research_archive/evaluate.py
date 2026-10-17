@@ -18,7 +18,7 @@ from sklearn.metrics import (
 # CONFIG — giữ nguyên như train
 # ====================================================
 DATA_DIR   = "multilabel_dataset"
-MODEL_PATH = "multilabel_model_gpu.pth"
+MODEL_PATH = "AI/multilabel_model_gpu.pth"
 NUTRIENTS  = ["Ca", "K", "Mn", "N", "P", "S", "Zn"]
 N_CLASSES  = 7
 THRESHOLD  = 0.5

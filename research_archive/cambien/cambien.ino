@@ -35,7 +35,7 @@ const char* serverUrl     = "https://nckh-ai.onrender.com/api/sensors";
 // ============================================================================
 
 // --- 2.1. Chân Relay điều khiển thiết bị ---
-#define FAN_PIN          18   // Relay Quạt gió làm mát (IO18)
+#define FAN_PIN          20   // Relay Quạt gió làm mát (IO20)
 #define PUMP_PIN         19   // Relay Máy bơm nước tưới ẩm (IO19)
 #define LIGHT_PIN        21   // Relay Đèn bổ sung quang hợp (IO21)
 

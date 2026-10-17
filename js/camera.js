@@ -791,63 +791,183 @@ function handleImageUpload(event) {
   }
 }
 
-// Personal Screen Camera Actions
-const preview = document.getElementById('preview-image');
-const imageInput = document.getElementById('imageInput');
-const camera = document.getElementById('camera');
-const canvas = document.getElementById('canvas');
+// ============================================================
+// PERSONAL SCREEN CAMERA & IMAGE LOGIC
+// ============================================================
 
-function chooseImage() {
-  if (imageInput) imageInput.click();
-}
+let currentFacingMode = 'environment'; // Mặc định mở camera sau (rear camera)
+let activeCameraStream = null;
 
-if (imageInput) {
-  imageInput.addEventListener('change', function() {
-    const file = this.files[0];
-    if (file) {
-      if (camera && camera.srcObject) {
-        camera.srcObject.getTracks().forEach(t => t.stop());
-        camera.srcObject = null;
-        camera.classList.add('hidden');
-      }
-      if (preview) preview.src = URL.createObjectURL(file);
-    }
-  });
-}
+window.chooseImage = function() {
+  const input = document.getElementById('imageInput');
+  if (input) input.click();
+};
 
-async function startCamera() {
-  try {
-    if (!camera) return;
-    camera.classList.remove('hidden');
-    
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      throw new Error("Trình duyệt không hỗ trợ API Camera hoặc bạn đang không dùng HTTPS/localhost.");
-    }
+window.selectSampleImage = function(url, label, btnElement) {
+  stopCamera();
 
-    // Yêu cầu độ phân giải cao, phù hợp cho WebCam USB gắn ngoài
-    const stream = await navigator.mediaDevices.getUserMedia({ 
-      video: { width: { ideal: 1920 }, height: { ideal: 1080 } } 
-    });
-    camera.srcObject = stream;
-    showToast('Camera đang chạy - nhấn nút để chụp');
-    const btn = document.getElementById('camera-btn');
-    if (btn) { btn.textContent = '📸 Chụp'; btn.onclick = capturePhoto; }
-  } catch (err) {
-    showToast('Không thể mở camera: ' + err.message);
+  const preview = document.getElementById('preview-image');
+  const badge = document.getElementById('preview-badge');
+  const cameraWrapper = document.getElementById('camera-wrapper');
+
+  if (preview) {
+    preview.src = url;
+    preview.classList.remove('hidden');
   }
+  if (cameraWrapper) {
+    cameraWrapper.classList.add('hidden');
+  }
+  if (badge) {
+    badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-400"></span> <span>${label}</span>`;
+    badge.className = "absolute top-3.5 left-3.5 px-3 py-1 rounded-full text-[11px] font-bold bg-slate-950/80 text-amber-300 backdrop-blur-md border border-amber-400/30 flex items-center gap-1.5 shadow-md z-20";
+  }
+
+  // Cập nhật trạng thái active của các nút mẫu
+  document.querySelectorAll('.sample-leaf-btn').forEach(btn => {
+    btn.classList.remove('ring-2', 'ring-emerald-500');
+  });
+  if (btnElement) {
+    btnElement.classList.add('ring-2', 'ring-emerald-500');
+  }
+
+  // Đồng bộ currentImage cho luồng dùng Pro nếu chuyển qua
+  if (typeof currentImage !== 'undefined') {
+    currentImage = url;
+    const uploadPreview = document.getElementById('upload-image-preview');
+    const scanPreview = document.getElementById('scan-image-preview');
+    const scanBtn = document.getElementById('scan-btn');
+    if (uploadPreview) uploadPreview.src = url;
+    if (scanPreview) scanPreview.src = url;
+    if (scanBtn) scanBtn.disabled = false;
+  }
+
+  showToast(`Đã chọn: ${label}`);
+};
+
+window.startCamera = async function() {
+  // Kiểm tra xem trình duyệt có hỗ trợ WebRTC getUserMedia và ngữ cảnh an toàn không
+  const isSecure = window.isSecureContext || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+
+  // Nếu truy cập từ điện thoại qua mạng LAN (HTTP IP ví dụ 192.168.x.x), trình duyệt chặn getUserMedia
+  // Tự động kích hoạt native camera của điện thoại (hỗ trợ camera sau mượt mà)
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !isSecure) {
+    const mobileInput = document.getElementById('mobileCameraInput');
+    if (mobileInput) {
+      showToast('Đang mở camera sau của điện thoại...');
+      mobileInput.click();
+      return;
+    }
+  }
+
+  try {
+    await openCameraStream(currentFacingMode);
+  } catch (err) {
+    console.warn("Lỗi mở camera WebRTC với facingMode:", currentFacingMode, err);
+    // Thử fallback không ràng buộc facingMode
+    try {
+      await openCameraStream(null);
+    } catch (fallbackErr) {
+      console.warn("Lỗi mở camera WebRTC hoàn toàn:", fallbackErr);
+      const mobileInput = document.getElementById('mobileCameraInput');
+      if (mobileInput) {
+        showToast('Chuyển sang Camera gốc của điện thoại...');
+        mobileInput.click();
+      } else {
+        showToast('Không thể mở camera: ' + (fallbackErr.message || err.message));
+      }
+    }
+  }
+};
+
+async function openCameraStream(facingMode) {
+  stopCamera();
+
+  const video = document.getElementById('camera');
+  const preview = document.getElementById('preview-image');
+  const cameraWrapper = document.getElementById('camera-wrapper');
+  const facingLabel = document.getElementById('camera-facing-label');
+
+  if (!video || !cameraWrapper) return;
+
+  const constraints = {
+    audio: false,
+    video: facingMode ? {
+      facingMode: { ideal: facingMode },
+      width: { ideal: 1280 },
+      height: { ideal: 720 }
+    } : {
+      width: { ideal: 1280 },
+      height: { ideal: 720 }
+    }
+  };
+
+  const stream = await navigator.mediaDevices.getUserMedia(constraints);
+  activeCameraStream = stream;
+  video.srcObject = stream;
+
+  // Hiển thị khung camera
+  cameraWrapper.classList.remove('hidden');
+  if (preview) preview.classList.add('hidden');
+
+  if (facingLabel) {
+    facingLabel.textContent = (currentFacingMode === 'environment') ? 'Cam sau' : 'Cam trước';
+  }
+  if (window.lucide) window.lucide.createIcons();
+
+  showToast('Camera sẵn sàng - bấm nút tròn để chụp');
 }
 
-function capturePhoto() {
-  if (!camera || !camera.srcObject) return;
+window.switchCamera = async function() {
+  currentFacingMode = (currentFacingMode === 'environment') ? 'user' : 'environment';
+  showToast(currentFacingMode === 'environment' ? 'Chuyển sang Camera sau' : 'Chuyển sang Camera trước');
+  try {
+    await openCameraStream(currentFacingMode);
+  } catch (e) {
+    showToast('Không thể đổi camera: ' + e.message);
+  }
+};
+
+window.stopCamera = function() {
+  if (activeCameraStream) {
+    activeCameraStream.getTracks().forEach(track => track.stop());
+    activeCameraStream = null;
+  }
+  const video = document.getElementById('camera');
+  if (video) video.srcObject = null;
+
+  const cameraWrapper = document.getElementById('camera-wrapper');
+  if (cameraWrapper) cameraWrapper.classList.add('hidden');
+
+  const preview = document.getElementById('preview-image');
+  if (preview) preview.classList.remove('hidden');
+};
+
+window.capturePhoto = function() {
+  const video = document.getElementById('camera');
+  const canvas = document.getElementById('canvas');
+  const preview = document.getElementById('preview-image');
+  const badge = document.getElementById('preview-badge');
+
+  if (!video || !video.srcObject) return;
+
+  canvas.width = video.videoWidth || 640;
+  canvas.height = video.videoHeight || 480;
   const ctx = canvas.getContext('2d');
-  canvas.width = camera.videoWidth;
-  canvas.height = camera.videoHeight;
-  ctx.drawImage(camera, 0, 0);
-  
-  const dataUrl = canvas.toDataURL('image/png');
-  if (preview) preview.src = dataUrl;
-  
-  // Cập nhật currentImage cho luồng dùng chuyên nghiệp
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+
+  if (preview) {
+    preview.src = dataUrl;
+    preview.classList.remove('hidden');
+  }
+
+  if (badge) {
+    badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span> <span>📸 Ảnh vừa chụp</span>`;
+    badge.className = "absolute top-3.5 left-3.5 px-3 py-1 rounded-full text-[11px] font-bold bg-slate-950/80 text-emerald-300 backdrop-blur-md border border-emerald-400/30 flex items-center gap-1.5 shadow-md z-20";
+  }
+
+  // Đồng bộ currentImage
   if (typeof currentImage !== 'undefined') {
     currentImage = dataUrl;
     const uploadPreview = document.getElementById('upload-image-preview');
@@ -858,10 +978,74 @@ function capturePhoto() {
     if (scanBtn) scanBtn.disabled = false;
   }
 
-  camera.srcObject.getTracks().forEach(t => t.stop());
-  camera.srcObject = null;
-  camera.classList.add('hidden');
-  showToast('Đã chụp ảnh - nhấn Quét AI để phân tích');
-  const btn = document.getElementById('camera-btn');
-  if (btn) { btn.textContent = 'Chụp ảnh'; btn.onclick = startCamera; }
+  // Bỏ chọn nút mẫu
+  document.querySelectorAll('.sample-leaf-btn').forEach(btn => btn.classList.remove('ring-2', 'ring-emerald-500'));
+
+  stopCamera();
+  showToast('Đã chụp ảnh xong - Nhấn Quét AI để phân tích!');
+};
+
+// Gắn lắng nghe sự kiện file input (Thư viện + Camera điện thoại)
+function initPersonalFileInputs() {
+  const imageInput = document.getElementById('imageInput');
+  const mobileCameraInput = document.getElementById('mobileCameraInput');
+
+  const handleSelectedFile = (file, sourceName) => {
+    if (!file) return;
+    stopCamera();
+
+    const preview = document.getElementById('preview-image');
+    const badge = document.getElementById('preview-badge');
+    const cameraWrapper = document.getElementById('camera-wrapper');
+
+    const objectUrl = URL.createObjectURL(file);
+    if (preview) {
+      preview.src = objectUrl;
+      preview.classList.remove('hidden');
+    }
+    if (cameraWrapper) cameraWrapper.classList.add('hidden');
+
+    if (badge) {
+      badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-cyan-400"></span> <span>${sourceName}</span>`;
+      badge.className = "absolute top-3.5 left-3.5 px-3 py-1 rounded-full text-[11px] font-bold bg-slate-950/80 text-cyan-300 backdrop-blur-md border border-cyan-400/30 flex items-center gap-1.5 shadow-md z-20";
+    }
+
+    // Bỏ chọn nút mẫu
+    document.querySelectorAll('.sample-leaf-btn').forEach(btn => btn.classList.remove('ring-2', 'ring-emerald-500'));
+
+    if (typeof currentImage !== 'undefined') {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        currentImage = e.target.result;
+        const uploadPreview = document.getElementById('upload-image-preview');
+        const scanPreview = document.getElementById('scan-image-preview');
+        const scanBtn = document.getElementById('scan-btn');
+        if (uploadPreview) uploadPreview.src = currentImage;
+        if (scanPreview) scanPreview.src = currentImage;
+        if (scanBtn) scanBtn.disabled = false;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    showToast(`Đã nhận ảnh (${sourceName}) - Sẵn sàng quét AI!`);
+  };
+
+  if (imageInput) {
+    imageInput.addEventListener('change', function() {
+      if (this.files && this.files[0]) handleSelectedFile(this.files[0], 'Thư viện ảnh');
+    });
+  }
+
+  if (mobileCameraInput) {
+    mobileCameraInput.addEventListener('change', function() {
+      if (this.files && this.files[0]) handleSelectedFile(this.files[0], 'Camera điện thoại');
+    });
+  }
+}
+
+// Khởi chạy khi DOM sẵn sàng
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initPersonalFileInputs);
+} else {
+  initPersonalFileInputs();
 }
