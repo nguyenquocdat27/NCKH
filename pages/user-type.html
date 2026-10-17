@@ -1,46 +1,79 @@
-<!-- ========== CHỌN CHẾ ĐỘ ========== -->
+<!-- ========== CHỌN CHẾ ĐỘ (APP CÂY ỚT) ========== -->
 <div id="user-type-screen" class="page-content min-h-screen relative flex items-center justify-center p-4 overflow-hidden">
   
-  <!-- Background Image & Overlay -->
-  <div class="absolute inset-0 z-0">
-    <img src="assets/images/hero_chili_field.png" alt="Chili Field Background" class="w-full h-full object-cover animate-[sway_20s_ease-in-out_infinite]" />
-    <div class="absolute inset-0 bg-gradient-to-t from-[#2D6A4F]/95 via-[#2D6A4F]/70 to-transparent backdrop-blur-[2px]"></div>
+  <!-- Phông nền: Cánh đồng ớt rộng lớn, quả chín đỏ, nền trời xanh, Mặt trời vàng -->
+  <div class="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+    <!-- Cánh đồng ớt quả chín đỏ và lá xanh -->
+    <img src="assets/images/hero_chili_field.png" alt="Cánh đồng ớt quả chín đỏ" class="w-full h-full object-cover animate-[sway_20s_ease-in-out_infinite]" />
+    
+    <!-- Lớp nền trời xanh và ánh sáng ban ngày -->
+    <div class="absolute inset-0 bg-gradient-to-b from-sky-500/35 via-transparent to-slate-950/85"></div>
+    
+    <!-- Mặt trời vàng rực rỡ ở góc trời -->
+    <div class="absolute top-6 right-8 sm:top-10 sm:right-16 w-32 h-32 sm:w-44 sm:h-44 rounded-full bg-gradient-to-tr from-amber-400 via-yellow-300 to-yellow-100 blur-xl opacity-90 shadow-[0_0_120px_#f59e0b] animate-pulse"></div>
+    <div class="absolute top-10 right-12 sm:top-14 sm:right-20 w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-yellow-100/90 blur-sm shadow-[0_0_50px_#fef08a]"></div>
   </div>
 
   <div class="w-full max-w-lg z-10 relative">
-    <div class="text-center mb-10">
-      <div class="w-24 h-24 mx-auto mb-6 rounded-3xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-2xl border border-white/30 animate-float">
-        <i data-lucide="leaf" class="w-12 h-12 text-white"></i>
+    
+    <!-- Tiêu đề chính: App Cây Ớt - Chăm sóc cây ớt thông minh -->
+    <div class="text-center mb-8 sm:mb-10">
+      <div class="w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-4 sm:mb-6 rounded-3xl bg-white/25 backdrop-blur-md flex items-center justify-center shadow-2xl border border-white/40 animate-float">
+        <i data-lucide="leaf" class="w-10 h-10 sm:w-12 sm:h-12 text-emerald-300 drop-shadow"></i>
       </div>
-      <h1 class="text-4xl sm:text-5xl font-bold font-sans text-white tracking-wide drop-shadow-lg mb-3">AI Nông Nghiệp</h1>
-      <p class="text-green-50 text-lg font-medium drop-shadow-md">Khám phá và phục hồi sức khỏe cây trồng</p>
+      <h1 class="text-4xl sm:text-5xl font-extrabold font-sans text-white tracking-wide drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)] mb-2">
+        App Cây Ớt
+      </h1>
+      <p class="text-amber-200 text-base sm:text-lg font-semibold drop-shadow-[0_2px_8px_rgba(0,0,0,0.7)]">
+        Chăm sóc cây ớt thông minh
+      </p>
     </div>
-    <div class="space-y-5">
-      <button type="button" onclick="selectUserType('personal')" class="card-hover w-full glass-card rounded-[32px] p-6 text-left transition-all duration-500 group relative overflow-hidden">
-        <div class="absolute inset-0 bg-gradient-to-r from-white/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-        <div class="flex items-center gap-5 relative z-10">
-          <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#52B788] to-[#2D6A4F] flex items-center justify-center shadow-lg shadow-[#52B788]/30 group-hover:scale-110 transition-transform duration-500">
-            <i data-lucide="camera" class="w-8 h-8 text-white"></i>
+
+    <!-- 2 Nút lựa chọn chế độ theo đúng màu thầy yêu cầu -->
+    <div class="space-y-4 sm:space-y-5">
+      
+      <!-- NÚT NGƯỜI DÙNG CÁ NHÂN: MÀU TÍM (PURPLE) -->
+      <button type="button" onclick="selectUserType('personal')" class="card-hover w-full glass-card rounded-[32px] p-5 sm:p-6 text-left transition-all duration-300 group relative overflow-hidden border-2 border-purple-300/70 hover:border-purple-400 bg-white/85 hover:bg-white shadow-xl shadow-purple-900/20 active:scale-98">
+        <div class="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-violet-500/15 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        <div class="flex items-center gap-4 sm:gap-5 relative z-10">
+          <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-purple-600 via-purple-700 to-indigo-800 flex items-center justify-center shadow-lg shadow-purple-600/40 group-hover:scale-110 transition-transform duration-300 shrink-0 text-white">
+            <i data-lucide="camera" class="w-7 h-7 sm:w-8 sm:h-8"></i>
           </div>
-          <div>
-            <h3 class="text-xl font-bold text-slate-800 font-sans mb-1 group-hover:text-[#2D6A4F] transition-colors">Người dùng cá nhân</h3>
-            <p class="text-sm text-slate-600 font-medium leading-relaxed">Chụp ảnh lá cây và AI sẽ phân tích tình trạng dinh dưỡng tức thì</p>
+          <div class="flex-1">
+            <div class="flex items-center gap-2 mb-1">
+              <h3 class="text-lg sm:text-xl font-bold text-purple-950 font-sans group-hover:text-purple-700 transition-colors">
+                Người dùng cá nhân
+              </h3>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 border border-purple-200">Màu Tím</span>
+            </div>
+            <p class="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
+              Chụp hoặc tải ảnh lá ớt để AI chẩn đoán bệnh và thiếu hụt dinh dưỡng tức thì
+            </p>
           </div>
         </div>
       </button>
       
-      <button type="button" onclick="selectUserType('pro')" class="card-hover w-full glass-card rounded-[32px] p-6 text-left transition-all duration-500 group relative overflow-hidden">
-        <div class="absolute inset-0 bg-gradient-to-r from-white/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-        <div class="flex items-center gap-5 relative z-10">
-          <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#8B6914] to-[#B38C2A] flex items-center justify-center shadow-lg shadow-[#8B6914]/30 group-hover:scale-110 transition-transform duration-500">
-            <i data-lucide="bar-chart-3" class="w-8 h-8 text-white"></i>
+      <!-- NÚT NHÀ CHUYÊN GIA: MÀU ĐỎ (RED) -->
+      <button type="button" onclick="selectUserType('pro')" class="card-hover w-full glass-card rounded-[32px] p-5 sm:p-6 text-left transition-all duration-300 group relative overflow-hidden border-2 border-rose-300/70 hover:border-red-400 bg-white/85 hover:bg-white shadow-xl shadow-red-900/20 active:scale-98">
+        <div class="absolute inset-0 bg-gradient-to-r from-red-500/10 to-rose-500/15 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        <div class="flex items-center gap-4 sm:gap-5 relative z-10">
+          <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-red-600 via-rose-600 to-red-700 flex items-center justify-center shadow-lg shadow-red-600/40 group-hover:scale-110 transition-transform duration-300 shrink-0 text-white">
+            <i data-lucide="bar-chart-3" class="w-7 h-7 sm:w-8 sm:h-8"></i>
           </div>
-          <div>
-            <h3 class="text-xl font-bold text-slate-800 font-sans mb-1 group-hover:text-[#8B6914] transition-colors">Nhà nông & Chuyên gia</h3>
-            <p class="text-sm text-slate-600 font-medium leading-relaxed">Quản lý nhiều vườn, dữ liệu cảm biến IoT và lịch sử phân tích AI</p>
+          <div class="flex-1">
+            <div class="flex items-center gap-2 mb-1">
+              <h3 class="text-lg sm:text-xl font-bold text-red-950 font-sans group-hover:text-red-700 transition-colors">
+                Nhà nông & Chuyên gia
+              </h3>
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-200">Màu Đỏ</span>
+            </div>
+            <p class="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
+              Quản lý vườn ớt, theo dõi cảm biến IoT, camera tự động và phân tích chuyên sâu
+            </p>
           </div>
         </div>
       </button>
+
     </div>
   </div>
 </div>

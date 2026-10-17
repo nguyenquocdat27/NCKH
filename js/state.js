@@ -1,7 +1,7 @@
 // ============================================================
 // STATE (js/state.js)
 // ============================================================
-const defaultConfig = { system_name: 'AI trong Nông Nghiệp' };
+const defaultConfig = { system_name: 'App Cây Ớt' };
 let currentUser = null;
 let farms = [];
 let selectedFarmId = null;
